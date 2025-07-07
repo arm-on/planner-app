@@ -9,7 +9,7 @@ A modern, full-featured personal productivity and planning web application.
 
 **Planner App** is a productivity dashboard that helps you manage your daily schedule, activities, reminders, projects, and tasks—all with robust timezone support. Designed for efficiency and clarity, it provides a seamless experience for tracking your work, setting reminders, and visualizing your progress.
 
-<video src="demo.mp4" controls></video>
+<video src="https://github.com/arm-on/planner-app/raw/refs/heads/main/demo.mp4" controls></video>
 
 ---
 
