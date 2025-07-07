@@ -1,6 +1,7 @@
 # Planner App
 
 A modern, full-featured personal productivity and planning web application.
+![](planner.png)
 
 ---
 
