@@ -1,7 +1,6 @@
 # Planner App
 
 A modern, full-featured personal productivity and planning web application.
-![](./planner.png)
 
 ---
 
@@ -9,7 +8,7 @@ A modern, full-featured personal productivity and planning web application.
 
 **Planner App** is a productivity dashboard that helps you manage your daily schedule, activities, reminders, projects, and tasks—all with robust timezone support. Designed for efficiency and clarity, it provides a seamless experience for tracking your work, setting reminders, and visualizing your progress.
 
-[![Watch the demo on YouTube](https://img.youtube.com/vi/rC6FapHpVyk/hqdefault.jpg)](https://www.youtube.com/watch?v=rC6FapHpVyk)
+[![Watch the demo on YouTube](./planner.png)](https://www.youtube.com/watch?v=rC6FapHpVyk)
 
 ---
 
