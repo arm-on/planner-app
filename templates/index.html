@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planner App - Smart Time Management</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .hero-section {
+            padding: 4rem 0;
+            color: white;
+        }
+        
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+        
+        .cta-buttons {
+            margin-bottom: 3rem;
+        }
+        
+        .btn-hero {
+            padding: 0.75rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            margin: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-hero:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .features-section {
+            padding: 4rem 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        
+        .feature-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: none;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+        
+        .feature-description {
+            color: #6c757d;
+            line-height: 1.6;
+        }
+        
+        .stats-section {
+            padding: 3rem 0;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #3498db;
+        }
+        
+        .stat-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+        
+        .navbar {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: white !important;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8) !important;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            color: white !important;
+        }
+        
+        .btn-outline-light:hover {
+            background-color: white;
+            color: #667eea;
+        }
+        
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-calendar3 me-2"></i>
+                Planner App
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light ms-2" href="/login">Login</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h1 class="hero-title">
+                        Smart Time Management
+                        <span class="d-block">Made Simple</span>
+                    </h1>
+                    <p class="hero-subtitle">
+                        Track your activities, manage projects, and get AI-powered insights to optimize your productivity and achieve your goals.
+                    </p>
+                    <div class="cta-buttons">
+                        <a href="/register" class="btn btn-light btn-hero">
+                            <i class="bi bi-person-plus me-2"></i>
+                            Get Started Free
+                        </a>
+                        <a href="/login" class="btn btn-outline-light btn-hero">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>
+                            Sign In
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-6 text-center">
+                    <div class="hero-image">
+                        <i class="bi bi-calendar-check" style="font-size: 15rem; opacity: 0.8;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section" id="features">
+        <div class="container">
+            <div class="row text-center mb-5">
+                <div class="col-12">
+                    <h2 class="display-4 fw-bold text-dark mb-3">Why Choose Planner App?</h2>
+                    <p class="lead text-muted">Everything you need to manage your time effectively</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card text-center">
+                        <div class="feature-icon">
+                            <i class="bi bi-clock"></i>
+                        </div>
+                        <h3 class="feature-title">Time Tracking</h3>
+                        <p class="feature-description">
+                            Clock in and out of activities with ease. Track your time spent on tasks and projects with detailed analytics.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card text-center">
+                        <div class="feature-icon">
+                            <i class="bi bi-graph-up"></i>
+                        </div>
+                        <h3 class="feature-title">Smart Reports</h3>
+                        <p class="feature-description">
+                            Generate detailed reports on your productivity. Visualize your time distribution across projects and tasks.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card text-center">
+                        <div class="feature-icon">
+                            <i class="bi bi-robot"></i>
+                        </div>
+                        <h3 class="feature-title">AI Assistant</h3>
+                        <p class="feature-description">
+                            Get AI-powered insights and recommendations to optimize your schedule and improve your productivity.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card text-center">
+                        <div class="feature-icon">
+                            <i class="bi bi-calendar-event"></i>
+                        </div>
+                        <h3 class="feature-title">Project Management</h3>
+                        <p class="feature-description">
+                            Organize your work into projects and tasks. Keep track of deadlines and progress with ease.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card text-center">
+                        <div class="feature-icon">
+                            <i class="bi bi-bell"></i>
+                        </div>
+                        <h3 class="feature-title">Smart Reminders</h3>
+                        <p class="feature-description">
+                            Set up intelligent reminders for your tasks and activities. Never miss important deadlines again.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card text-center">
+                        <div class="feature-icon">
+                            <i class="bi bi-phone"></i>
+                        </div>
+                        <h3 class="feature-title">Mobile Friendly</h3>
+                        <p class="feature-description">
+                            Access your planner from anywhere. Our responsive design works perfectly on all devices.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number">24/7</div>
+                        <div class="stat-label">Availability</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number">100%</div>
+                        <div class="stat-label">Free to Start</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number">AI</div>
+                        <div class="stat-label">Powered</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number">∞</div>
+                        <div class="stat-label">Possibilities</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="features-section" id="about">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h2 class="display-5 fw-bold text-dark mb-4">About Planner App</h2>
+                    <p class="lead text-muted mb-4">
+                        Planner App is designed to help you take control of your time and boost your productivity. 
+                        Whether you're a student, professional, or entrepreneur, our comprehensive time management 
+                        tools will help you achieve your goals.
+                    </p>
+                    <p class="text-muted">
+                        Our AI-powered assistant provides personalized insights and recommendations to help you 
+                        optimize your schedule and make the most of every minute. Start your journey towards 
+                        better time management today.
+                    </p>
+                    <a href="/register" class="btn btn-primary btn-lg mt-3">
+                        <i class="bi bi-rocket me-2"></i>
+                        Start Your Journey
+                    </a>
+                </div>
+                <div class="col-lg-6 text-center">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="bi bi-lightbulb"></i>
+                        </div>
+                        <h3 class="feature-title">Smart Insights</h3>
+                        <p class="feature-description">
+                            Get intelligent recommendations based on your activity patterns and productivity trends.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="bi bi-calendar3 me-2"></i>Planner App</h5>
+                    <p class="mb-0">Smart time management for everyone.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">
+                        <a href="/login" class="text-white text-decoration-none me-3">Login</a>
+                        <a href="/register" class="text-white text-decoration-none">Register</a>
+                    </p>
+                </div>
+            </div>
+            <hr class="my-3">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <small class="text-muted">
+                        © 2024 Planner App. All rights reserved.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Check authentication status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthStatus();
+        });
+
+        // Function to check authentication status
+        function checkAuthStatus() {
+            const apiKey = localStorage.getItem('apiKey');
+            const username = localStorage.getItem('username');
+            const displayName = localStorage.getItem('displayName');
+            
+            if (apiKey && username) {
+                // User is authenticated - update UI
+                updateUIForAuthenticatedUser(username, displayName);
+            } else {
+                // User is not authenticated - ensure UI shows login state
+                updateUIForUnauthenticatedUser();
+            }
+        }
+
+        // Update UI for authenticated user
+        function updateUIForAuthenticatedUser(username, displayName) {
+            // Update navigation
+            const navbarNav = document.getElementById('navbarNav');
+            if (navbarNav) {
+                const navItems = navbarNav.querySelector('.navbar-nav');
+                if (navItems) {
+                    // Remove login button if it exists
+                    const loginBtn = navItems.querySelector('.nav-item .btn-outline-light[href="/login"]');
+                    if (loginBtn) {
+                        loginBtn.closest('.nav-item').remove();
+                    }
+                    
+                    // Add welcome message and logout button if they don't exist
+                    if (!navItems.querySelector('.nav-item .text-light')) {
+                        const welcomeItem = document.createElement('li');
+                        welcomeItem.className = 'nav-item';
+                        welcomeItem.innerHTML = `
+                            <span class="nav-link text-light">
+                                <i class="bi bi-person-circle me-1"></i>
+                                Welcome, ${displayName || username}
+                            </span>
+                        `;
+                        navItems.appendChild(welcomeItem);
+                        
+                        const dashboardItem = document.createElement('li');
+                        dashboardItem.className = 'nav-item';
+                        dashboardItem.innerHTML = `
+                            <a class="btn btn-outline-light ms-2" href="/dashboard">Dashboard</a>
+                        `;
+                        navItems.appendChild(dashboardItem);
+                        
+                        const logoutItem = document.createElement('li');
+                        logoutItem.className = 'nav-item';
+                        logoutItem.innerHTML = `
+                            <a class="btn btn-light ms-2" href="#" onclick="logout()">Logout</a>
+                        `;
+                        navItems.appendChild(logoutItem);
+                    }
+                }
+            }
+            
+            // Update hero section
+            const heroTitle = document.querySelector('.hero-title');
+            const heroSubtitle = document.querySelector('.hero-subtitle');
+            const ctaButtons = document.querySelector('.cta-buttons');
+            const heroImage = document.querySelector('.hero-image i');
+            
+            if (heroTitle) {
+                heroTitle.innerHTML = `
+                    Welcome Back,
+                    <span class="d-block">${displayName || username}!</span>
+                `;
+            }
+            
+            if (heroSubtitle) {
+                heroSubtitle.textContent = 'Ready to continue your productivity journey? Access your dashboard to track activities, view reports, and get AI-powered insights.';
+            }
+            
+            if (ctaButtons) {
+                ctaButtons.innerHTML = `
+                    <a href="/dashboard" class="btn btn-light btn-hero">
+                        <i class="bi bi-house me-2"></i>
+                        Go to Dashboard
+                    </a>
+                    <a href="/reports" class="btn btn-outline-light btn-hero">
+                        <i class="bi bi-graph-up me-2"></i>
+                        View Reports
+                    </a>
+                    <a href="/assistant" class="btn btn-outline-light btn-hero">
+                        <i class="bi bi-robot me-2"></i>
+                        AI Assistant
+                    </a>
+                `;
+            }
+            
+            if (heroImage) {
+                heroImage.className = 'bi bi-person-check';
+                heroImage.style.fontSize = '15rem';
+                heroImage.style.opacity = '0.8';
+            }
+            
+            // Update footer
+            const footer = document.querySelector('.footer .col-md-6.text-md-end p');
+            if (footer) {
+                footer.innerHTML = `
+                    <a href="/dashboard" class="text-white text-decoration-none me-3">Dashboard</a>
+                    <a href="/reports" class="text-white text-decoration-none me-3">Reports</a>
+                    <a href="/assistant" class="text-white text-decoration-none me-3">Assistant</a>
+                    <a href="#" onclick="logout()" class="text-white text-decoration-none">Logout</a>
+                `;
+            }
+        }
+
+        // Update UI for unauthenticated user
+        function updateUIForUnauthenticatedUser() {
+            // Update navigation
+            const navbarNav = document.getElementById('navbarNav');
+            if (navbarNav) {
+                const navItems = navbarNav.querySelector('.navbar-nav');
+                if (navItems) {
+                    // Remove authenticated user elements if they exist
+                    const welcomeItem = navItems.querySelector('.nav-item .text-light');
+                    if (welcomeItem) {
+                        welcomeItem.closest('.nav-item').remove();
+                    }
+                    
+                    const dashboardBtn = navItems.querySelector('.nav-item .btn-outline-light[href="/dashboard"]');
+                    if (dashboardBtn) {
+                        dashboardBtn.closest('.nav-item').remove();
+                    }
+                    
+                    const logoutBtn = navItems.querySelector('.nav-item .btn-light[onclick="logout()"]');
+                    if (logoutBtn) {
+                        logoutBtn.closest('.nav-item').remove();
+                    }
+                    
+                    // Add login button if it doesn't exist
+                    if (!navItems.querySelector('.nav-item .btn-outline-light[href="/login"]')) {
+                        const loginItem = document.createElement('li');
+                        loginItem.className = 'nav-item';
+                        loginItem.innerHTML = `
+                            <a class="btn btn-outline-light ms-2" href="/login">Login</a>
+                        `;
+                        navItems.appendChild(loginItem);
+                    }
+                }
+            }
+            
+            // Update hero section
+            const heroTitle = document.querySelector('.hero-title');
+            const heroSubtitle = document.querySelector('.hero-subtitle');
+            const ctaButtons = document.querySelector('.cta-buttons');
+            const heroImage = document.querySelector('.hero-image i');
+            
+            if (heroTitle) {
+                heroTitle.innerHTML = `
+                    Smart Time Management
+                    <span class="d-block">Made Simple</span>
+                `;
+            }
+            
+            if (heroSubtitle) {
+                heroSubtitle.textContent = 'Track your activities, manage projects, and get AI-powered insights to optimize your productivity and achieve your goals.';
+            }
+            
+            if (ctaButtons) {
+                ctaButtons.innerHTML = `
+                    <a href="/register" class="btn btn-light btn-hero">
+                        <i class="bi bi-person-plus me-2"></i>
+                        Get Started Free
+                    </a>
+                    <a href="/login" class="btn btn-outline-light btn-hero">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>
+                        Sign In
+                    </a>
+                `;
+            }
+            
+            if (heroImage) {
+                heroImage.className = 'bi bi-calendar-check';
+                heroImage.style.fontSize = '15rem';
+                heroImage.style.opacity = '0.8';
+            }
+            
+            // Update footer
+            const footer = document.querySelector('.footer .col-md-6.text-md-end p');
+            if (footer) {
+                footer.innerHTML = `
+                    <a href="/login" class="text-white text-decoration-none me-3">Login</a>
+                    <a href="/register" class="text-white text-decoration-none">Register</a>
+                `;
+            }
+        }
+
+        // Logout Function
+        function logout() {
+            // Clear all stored data
+            localStorage.removeItem('apiKey');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('username');
+            localStorage.removeItem('displayName');
+            
+            // Clear cookies
+            document.cookie = "apiKey=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            
+            // Update UI to show unauthenticated state
+            updateUIForUnauthenticatedUser();
+            
+            // Redirect to landing page
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html> 

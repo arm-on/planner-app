@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - Planner App</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            min-height: 100vh;
+        }
+        
+        .report-header {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Header Logo */
+        .header-logo {
+            width: 50px !important;
+            height: 50px !important;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
+            border-radius: 12px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            color: white !important;
+            font-size: 1.5rem !important;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3) !important;
+        }
+
+        .header-title {
+            color: #2c3e50 !important;
+            font-weight: 600 !important;
+            font-size: 1.5rem !important;
+        }
+
+        .header-subtitle {
+            font-size: 0.85rem !important;
+            color: #7f8c8d !important;
+        }
+
+        /* Header Navigation */
+        .header-nav {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+            gap: 1rem !important;
+        }
+
+        .nav-buttons {
+            display: flex !important;
+            gap: 0.5rem !important;
+            align-items: center !important;
+        }
+
+        .nav-btn {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            padding: 0.6rem 1rem !important;
+            border: none !important;
+            border-radius: 10px !important;
+            background: rgba(255, 255, 255, 0.8) !important;
+            color: #2c3e50 !important;
+            text-decoration: none !important;
+            font-size: 0.9rem !important;
+            font-weight: 500 !important;
+            transition: all 0.3s ease !important;
+            backdrop-filter: blur(10px) !important;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+            text-decoration: none !important;
+        }
+
+        .nav-btn i {
+            font-size: 1rem !important;
+        }
+
+        .btn-text {
+            display: inline !important;
+        }
+
+        /* Specific button styles */
+        .timezone-btn {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%) !important;
+            color: white !important;
+        }
+
+        .timezone-btn:hover {
+            background: linear-gradient(135deg, #7f8c8d 0%, #6c7b7d 100%) !important;
+            color: white !important;
+        }
+
+        .dashboard-btn {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%) !important;
+            color: white !important;
+        }
+
+        .dashboard-btn:hover {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%) !important;
+            color: white !important;
+        }
+
+        .assistant-btn {
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%) !important;
+            color: white !important;
+        }
+
+        .assistant-btn:hover {
+            background: linear-gradient(135deg, #8e44ad 0%, #7d3c98 100%) !important;
+            color: white !important;
+        }
+
+        .logout-btn {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
+            color: white !important;
+        }
+
+        .logout-btn:hover {
+            background: linear-gradient(135deg, #c0392b 0%, #a93226 100%) !important;
+            color: white !important;
+        }
+
+        /* Welcome Message Row */
+        .welcome-message-row {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            padding: 0.5rem 0 !important;
+            border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
+        }
+
+        .welcome-container {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.75rem !important;
+            background: rgba(255, 255, 255, 0.9) !important;
+            padding: 0.5rem 1rem !important;
+            border-radius: 15px !important;
+            backdrop-filter: blur(10px) !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .welcome-container:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .welcome-icon {
+            width: 30px !important;
+            height: 30px !important;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            color: white !important;
+            font-size: 1rem !important;
+        }
+
+        .welcome-text {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+        }
+
+        .welcome-greeting {
+            color: #7f8c8d !important;
+            font-size: 0.9rem !important;
+        }
+
+        .user-name {
+            color: #2c3e50 !important;
+            font-weight: 700 !important;
+            font-size: 1.2rem !important;
+            display: block !important;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-nav {
+                justify-content: center !important;
+                margin-top: 1rem !important;
+            }
+
+            .nav-buttons {
+                flex-wrap: wrap !important;
+                justify-content: center !important;
+            }
+
+            .welcome-container {
+                flex-direction: column !important;
+                text-align: center !important;
+                padding: 0.5rem !important;
+            }
+
+            .welcome-text {
+                align-items: center !important;
+                flex-direction: row !important;
+            }
+        }
+        
+        .main-content {
+            padding: 2rem 0;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+        }
+        
+        .date-range-picker {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 1.5rem;
+        }
+        
+        .project-selector {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 1.5rem;
+        }
+        
+        .btn-generate {
+            border-radius: 25px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border-width: 2px;
+        }
+        
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .stats-card {
+            text-align: center;
+            padding: 1rem;
+        }
+        
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .stats-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .btn-outline-primary {
+            border-color: #3498db;
+            color: #3498db;
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: #3498db;
+            border-color: #3498db;
+            color: white;
+        }
+        
+        .btn-outline-secondary {
+            border-color: #95a5a6;
+            color: #95a5a6;
+        }
+        
+        .btn-outline-secondary:hover {
+            background-color: #95a5a6;
+            border-color: #95a5a6;
+            color: white;
+        }
+        
+        .text-primary {
+            color: #3498db !important;
+        }
+        
+        .text-danger {
+            color: #e74c3c !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="report-header">
+        <div class="container">
+            <div class="row align-items-center py-3">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <div class="header-logo me-3">
+                            <i class="bi bi-graph-up"></i>
+                </div>
+                        <div>
+                            <div class="header-title">Time Reports</div>
+                            <div class="header-subtitle">Analytics & Insights</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="header-nav">
+                        <div class="nav-buttons">
+                            <a href="/dashboard" class="nav-btn dashboard-btn" title="Go to Dashboard">
+                                <i class="bi bi-house"></i>
+                                <span class="btn-text">Dashboard</span>
+                            </a>
+                            <a href="/assistant" class="nav-btn assistant-btn" title="AI Assistant">
+                                <i class="bi bi-robot"></i>
+                                <span class="btn-text">Assistant</span>
+                            </a>
+                            <button class="nav-btn timezone-btn" onclick="openTimezoneSettings()" title="Change Timezone">
+                                <i class="bi bi-gear"></i>
+                                <span class="btn-text">Timezone</span>
+                            </button>
+                            <a href="#" onclick="logout()" class="nav-btn logout-btn" title="Logout">
+                                <i class="bi bi-box-arrow-right"></i>
+                                <span class="btn-text">Logout</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Welcome Message Row -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="welcome-message-row">
+                        <div class="welcome-container">
+                            <div class="welcome-icon">
+                                <i class="bi bi-person-circle"></i>
+                            </div>
+                            <div class="welcome-text">
+                                <span class="welcome-greeting">Welcome back, </span>
+                                <span class="user-name" id="userName"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <!-- Date Range Selection -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card date-range-picker">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">
+                                <i class="bi bi-calendar-range me-2"></i>
+                                Select Date Range
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label for="startDate" class="form-label">Start Date</label>
+                                    <input type="date" class="form-control" id="startDate" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="endDate" class="form-label">End Date</label>
+                                    <input type="date" class="form-control" id="endDate" required>
+                                </div>
+                                <div class="col-md-4 d-flex align-items-end">
+                                    <button class="btn btn-outline-primary btn-generate w-100" onclick="generateReport()">
+                                        <i class="bi bi-search me-2"></i>
+                                        Generate Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Statistics -->
+            <div class="row mb-4" id="summaryStats" style="display: none;">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-3">
+                                    <div class="stats-card">
+                                        <div class="stats-number" id="totalHours">0</div>
+                                        <div class="stats-label">Total Hours</div>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="stats-card">
+                                        <div class="stats-number" id="totalActivities">0</div>
+                                        <div class="stats-label">Activities</div>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="stats-card">
+                                        <div class="stats-number" id="totalProjects">0</div>
+                                        <div class="stats-label">Projects</div>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="stats-card">
+                                        <div class="stats-number" id="totalTasks">0</div>
+                                        <div class="stats-label">Tasks</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Time Chart -->
+            <div class="row mb-4" id="projectChartSection" style="display: none;">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-bar-chart me-2"></i>
+                                Time Spent by Project
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="projectChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Selector for Task Breakdown -->
+            <div class="row mb-4" id="projectSelectorSection" style="display: none;">
+                <div class="col-12">
+                    <div class="card project-selector">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">
+                                <i class="bi bi-pie-chart me-2"></i>
+                                Task Breakdown
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="projectSelect" class="form-label">Select Project</label>
+                                    <select class="form-select" id="projectSelect" onchange="generateTaskBreakdown()">
+                                        <option value="">Choose a project...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 d-flex align-items-end">
+                                    <small class="text-muted">Select a project to see time breakdown by tasks</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task Breakdown Chart -->
+            <div class="row mb-4" id="taskChartSection" style="display: none;">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-pie-chart me-2"></i>
+                                Time Breakdown by Tasks
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="taskChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Details -->
+            <div class="row mb-4" id="activityDetailsSection" style="display: none;">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-list-ul me-2"></i>
+                                Activity Details
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Task</th>
+                                            <th>Project</th>
+                                            <th>Start Time</th>
+                                            <th>End Time</th>
+                                            <th>Duration</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="activityDetailsTable">
+                                        <!-- Activity details will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;">
+        <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i id="toastIcon" class="bi me-2"></i>
+                <strong id="toastTitle" class="me-auto"></strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div id="toastBody" class="toast-body"></div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let reportData = null;
+        let projectChart = null;
+        let taskChart = null;
+        let projectsData = [];
+        let activityDetailsData = [];
+        let activityDetailsPage = 1;
+        let activityDetailsPageSize = 20;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Report page initializing...');
+            
+            // Check API key first
+            const apiKey = localStorage.getItem('apiKey');
+            console.log('API key found:', !!apiKey);
+            
+            if (!apiKey) {
+                console.log('No API key found, redirecting to login...');
+                window.location.href = '/login';
+                return;
+            }
+            
+            loadUserInfo();
+            loadProjects();
+            loadUserTimezone();
+            setDefaultDateRange();
+        });
+
+        function setDefaultDateRange() {
+            const today = new Date();
+            const lastMonth = new Date();
+            lastMonth.setMonth(lastMonth.getMonth() - 1);
+            
+            document.getElementById('startDate').value = lastMonth.toISOString().split('T')[0];
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
+        }
+
+        function loadUserInfo() {
+            console.log('Loading user info...');
+            const displayName = localStorage.getItem('displayName');
+            const username = localStorage.getItem('username');
+            const userName = displayName || username || 'User';
+            
+            console.log('User info from localStorage:', {
+                displayName: displayName,
+                username: username,
+                finalUserName: userName
+            });
+            
+            const userNameElement = document.getElementById('userName');
+            if (userNameElement) {
+                userNameElement.textContent = userName;
+                console.log('Set userName element to:', userName);
+            } else {
+                console.error('userName element not found!');
+            }
+        }
+
+        async function loadProjects() {
+            try {
+                const apiKey = localStorage.getItem('apiKey');
+                if (!apiKey) {
+                    console.error('No API key found for loading projects');
+                    return;
+                }
+
+                console.log('Loading projects with API key:', apiKey);
+
+                const response = await fetch('/projects/', {
+                    headers: {
+                        'X-API-Key': apiKey
+                    }
+                });
+
+                console.log('Projects response status:', response.status);
+
+                if (response.ok) {
+                    projectsData = await response.json();
+                    console.log('Loaded projects:', projectsData);
+                } else {
+                    let errorMessage = 'Unknown error';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || 'Unknown error';
+                    } catch (parseError) {
+                        const textResponse = await response.text();
+                        console.error('Non-JSON response:', textResponse);
+                        errorMessage = `Server error (${response.status}): ${textResponse.substring(0, 100)}`;
+                    }
+                    console.error('Error loading projects:', errorMessage);
+                    showToast('error', 'Error', `Failed to load projects: ${errorMessage}`);
+                }
+            } catch (error) {
+                console.error('Error loading projects:', error);
+                showToast('error', 'Error', `Error loading projects: ${error.message}`);
+            }
+        }
+
+        async function generateReport() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            if (!startDate || !endDate) {
+                showToast('warning', 'Validation Error', 'Please select both start and end dates');
+                return;
+            }
+
+            if (new Date(startDate) > new Date(endDate)) {
+                showToast('warning', 'Validation Error', 'Start date must be before end date');
+                return;
+            }
+
+            try {
+                const apiKey = localStorage.getItem('apiKey');
+                if (!apiKey) {
+                    showToast('error', 'Error', 'No API key found. Please log in again.');
+                    window.location.href = '/login';
+                    return;
+                }
+
+                showToast('info', 'Loading', 'Generating report...');
+
+                const response = await fetch(`/reports/time-spent?start_date=${startDate}&end_date=${endDate}&timezone=${encodeURIComponent(userTimezone)}`, {
+                    headers: {
+                        'X-API-Key': apiKey
+                    }
+                });
+
+                if (response.ok) {
+                    reportData = await response.json();
+                    console.log('Report data received:', reportData);
+                    
+                    displaySummaryStats();
+                    displayProjectChart();
+                    populateProjectSelector();
+                    loadActivityDetails(startDate, endDate);
+                    
+                    showToast('success', 'Success!', 'Report generated successfully!');
+                } else {
+                    const errorData = await response.json();
+                    showToast('error', 'Error', `Failed to generate report: ${errorData.detail || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error('Error generating report:', error);
+                showToast('error', 'Error', `Error generating report: ${error.message}`);
+            }
+        }
+
+        function displaySummaryStats() {
+            if (!reportData) return;
+
+            const totalHours = reportData.total_hours || 0;
+            const totalActivities = reportData.total_activities || 0;
+            const totalProjects = reportData.project_data ? Object.keys(reportData.project_data).length : 0;
+            const totalTasks = reportData.task_data ? Object.keys(reportData.task_data).length : 0;
+
+            // Format total hours with hours and minutes
+            const hoursInt = Math.floor(totalHours);
+            const minutes = Math.round((totalHours - hoursInt) * 60);
+            const formattedHours = `${hoursInt}h ${minutes}m (${totalHours.toFixed(1)} hours)`;
+
+            document.getElementById('totalHours').textContent = formattedHours;
+            document.getElementById('totalActivities').textContent = totalActivities;
+            document.getElementById('totalProjects').textContent = totalProjects;
+            document.getElementById('totalTasks').textContent = totalTasks;
+
+            // Add timezone info to the summary section
+            const summarySection = document.getElementById('summaryStats');
+            const timezoneInfo = summarySection.querySelector('.timezone-info');
+            if (!timezoneInfo) {
+                const timezoneDiv = document.createElement('div');
+                timezoneDiv.className = 'text-muted small mt-2 timezone-info';
+                timezoneDiv.innerHTML = `<i class="bi bi-clock"></i> All times displayed in ${userTimezone} timezone`;
+                summarySection.appendChild(timezoneDiv);
+            } else {
+                timezoneInfo.innerHTML = `<i class="bi bi-clock"></i> All times displayed in ${userTimezone} timezone`;
+            }
+
+            document.getElementById('summaryStats').style.display = 'block';
+        }
+
+        function displayProjectChart() {
+            if (!reportData || !reportData.project_data) return;
+
+            const ctx = document.getElementById('projectChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (projectChart) {
+                projectChart.destroy();
+            }
+
+            const projectNames = [];
+            const projectHours = [];
+            const projectColors = [];
+
+            Object.entries(reportData.project_data).forEach(([projectId, data]) => {
+                const project = projectsData.find(p => p.id == projectId);
+                const projectName = project ? project.name : `Project ${projectId}`;
+                
+                projectNames.push(projectName);
+                projectHours.push(data.total_hours);
+                projectColors.push(project ? project.color : '#6c757d');
+            });
+
+            projectChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: projectNames,
+                    datasets: [{
+                        label: 'Hours Spent',
+                        data: projectHours,
+                        backgroundColor: projectColors,
+                        borderColor: projectColors.map(color => color + '80'),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const hours = context.parsed.y;
+                                    const hoursInt = Math.floor(hours);
+                                    const minutes = Math.round((hours - hoursInt) * 60);
+                                    return `${hoursInt}h ${minutes}m (${hours.toFixed(1)} hours)`;
+                                },
+                                title: function(context) {
+                                    return context[0].label + ' (Timezone: ' + userTimezone + ')';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Hours (' + userTimezone + ')'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Projects'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Update chart title with timezone
+            const projectChartTitle = document.querySelector('#projectChartSection .card-title');
+            if (projectChartTitle) {
+                projectChartTitle.innerHTML = '<i class="bi bi-bar-chart me-2"></i>Time Spent by Project (' + userTimezone + ')';
+            }
+
+            document.getElementById('projectChartSection').style.display = 'block';
+            document.getElementById('projectSelectorSection').style.display = 'block';
+        }
+
+        function populateProjectSelector() {
+            if (!reportData || !reportData.project_data) return;
+
+            const select = document.getElementById('projectSelect');
+            select.innerHTML = '<option value="">Choose a project...</option>';
+
+            Object.keys(reportData.project_data).forEach(projectId => {
+                const project = projectsData.find(p => p.id == projectId);
+                const projectName = project ? project.name : `Project ${projectId}`;
+                
+                const option = document.createElement('option');
+                option.value = projectId;
+                option.textContent = projectName;
+                select.appendChild(option);
+            });
+        }
+
+        function generateTaskBreakdown() {
+            const selectedProjectId = document.getElementById('projectSelect').value;
+            
+            if (!selectedProjectId) {
+                document.getElementById('taskChartSection').style.display = 'none';
+                return;
+            }
+
+            if (!reportData || !reportData.task_data) return;
+
+            // Filter tasks for the selected project
+            const projectTasks = {};
+            Object.entries(reportData.task_data).forEach(([taskId, taskData]) => {
+                if (taskData.project_id == selectedProjectId) {
+                    projectTasks[taskId] = taskData;
+                }
+            });
+
+            if (Object.keys(projectTasks).length === 0) {
+                showToast('info', 'No Data', 'No tasks found for this project in the selected date range');
+                document.getElementById('taskChartSection').style.display = 'none';
+                return;
+            }
+
+            displayTaskChart(projectTasks);
+        }
+
+        function displayTaskChart(projectTasks) {
+            const ctx = document.getElementById('taskChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (taskChart) {
+                taskChart.destroy();
+            }
+
+            const taskNames = [];
+            const taskHours = [];
+            const colors = [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+                '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+            ];
+
+            Object.entries(projectTasks).forEach(([taskId, taskData], index) => {
+                taskNames.push(taskData.task_name || `Task ${taskId}`);
+                taskHours.push(taskData.total_hours);
+            });
+
+            taskChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: taskNames,
+                    datasets: [{
+                        data: taskHours,
+                        backgroundColor: colors.slice(0, taskNames.length),
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    const hours = context.parsed;
+                                    const hoursInt = Math.floor(hours);
+                                    const minutes = Math.round((hours - hoursInt) * 60);
+                                    return context.label + ': ' + hoursInt + 'h ' + minutes + 'm (' + hours.toFixed(1) + ' hours, ' + percentage + '%)';
+                                },
+                                title: function(context) {
+                                    return 'Task Breakdown (Timezone: ' + userTimezone + ')';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Update chart title with timezone
+            const taskChartTitle = document.querySelector('#taskChartSection .card-title');
+            if (taskChartTitle) {
+                taskChartTitle.innerHTML = '<i class="bi bi-pie-chart me-2"></i>Time Breakdown by Tasks (' + userTimezone + ')';
+            }
+
+            document.getElementById('taskChartSection').style.display = 'block';
+        }
+
+        // Load and display activity details with timezone conversion
+        async function loadActivityDetails(startDate, endDate, page = 1) {
+            try {
+                const apiKey = localStorage.getItem('apiKey');
+                if (!apiKey) {
+                    console.error('No API key found for loading activity details');
+                    return;
+                }
+                const skip = (page - 1) * activityDetailsPageSize;
+                const response = await fetch(`/activities/date-range?start_date=${startDate}&end_date=${endDate}&skip=${skip}&limit=${activityDetailsPageSize}&timezone=${encodeURIComponent(userTimezone)}`, {
+                    headers: {
+                        'X-API-Key': apiKey
+                    }
+                });
+                if (response.ok) {
+                    const activities = await response.json();
+                    activityDetailsData = activities;
+                    activityDetailsPage = page;
+                    displayActivityDetails(activities);
+                    updateActivityDetailsPagination(activities.length);
+                } else {
+                    console.error('Error loading activity details:', response.status);
+                }
+            } catch (error) {
+                console.error('Error loading activity details:', error);
+            }
+        }
+
+        function displayActivityDetails(activities) {
+            const tableBody = document.getElementById('activityDetailsTable');
+            tableBody.innerHTML = '';
+            if (!activities || activities.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No activities found</td></tr>';
+                document.getElementById('activityDetailsSection').style.display = 'none';
+                return;
+            }
+            // Sort activities by start time
+            activities.sort((a, b) => new Date(a.clock_in) - new Date(b.clock_in));
+            activities.forEach(activity => {
+                const row = document.createElement('tr');
+                // Convert times to user's timezone
+                const startTime = convertToUserTimezone(activity.clock_in);
+                const endTime = activity.clock_out ? convertToUserTimezone(activity.clock_out) : 'Ongoing';
+                // Calculate duration
+                let duration = '';
+                if (activity.clock_out) {
+                    const durationMs = new Date(activity.clock_out) - new Date(activity.clock_in);
+                    const durationHours = durationMs / (1000 * 60 * 60);
+                    duration = durationHours.toFixed(2) + ' hours';
+                } else {
+                    duration = 'Ongoing';
+                }
+                // Use new fields from API
+                const projectName = activity.project_name || `Project ${activity.project_id}`;
+                const taskName = activity.task_name || `Task ${activity.task_id}`;
+                row.innerHTML = `
+                    <td>${taskName}</td>
+                    <td>${projectName}</td>
+                    <td>${startTime}</td>
+                    <td>${endTime}</td>
+                    <td>${duration}</td>
+                    <td><span class="badge bg-${activity.status === 'DONE' ? 'success' : 'warning'}">${activity.status}</span></td>
+                `;
+                tableBody.appendChild(row);
+            });
+            document.getElementById('activityDetailsSection').style.display = 'block';
+        }
+
+        function updateActivityDetailsPagination(currentCount) {
+            let paginationDiv = document.getElementById('activityDetailsPagination');
+            if (!paginationDiv) {
+                paginationDiv = document.createElement('div');
+                paginationDiv.id = 'activityDetailsPagination';
+                paginationDiv.className = 'd-flex justify-content-center my-2';
+                document.getElementById('activityDetailsSection').appendChild(paginationDiv);
+            }
+            let html = '';
+            if (activityDetailsPage > 1) {
+                html += `<button class='btn btn-outline-primary me-2' onclick='loadActivityDetails(document.getElementById("startDate").value, document.getElementById("endDate").value, ${activityDetailsPage - 1})'>Previous</button>`;
+            }
+            if (currentCount === activityDetailsPageSize) {
+                html += `<button class='btn btn-outline-primary' onclick='loadActivityDetails(document.getElementById("startDate").value, document.getElementById("endDate").value, ${activityDetailsPage + 1})'>Next</button>`;
+            }
+            paginationDiv.innerHTML = html;
+        }
+
+        function convertToUserTimezone(utcTimeString) {
+            if (!utcTimeString) return '';
+            
+            try {
+                const utcDate = new Date(utcTimeString);
+                return utcDate.toLocaleString('en-US', {
+                    timeZone: userTimezone,
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+            } catch (error) {
+                console.error('Error converting timezone:', error);
+                return utcTimeString;
+            }
+        }
+
+        // Toast notification function
+        function showToast(type, title, message, duration = 5000) {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastTitle = document.getElementById('toastTitle');
+            const toastBody = document.getElementById('toastBody');
+            
+            // Set icon and color based on type
+            let iconClass = '';
+            let bgClass = '';
+            
+            switch(type) {
+                case 'success':
+                    iconClass = 'bi-check-circle-fill text-success';
+                    bgClass = 'bg-success text-white';
+                    break;
+                case 'error':
+                    iconClass = 'bi-exclamation-triangle-fill text-danger';
+                    bgClass = 'bg-danger text-white';
+                    break;
+                case 'warning':
+                    iconClass = 'bi-exclamation-circle-fill text-warning';
+                    bgClass = 'bg-warning text-dark';
+                    break;
+                case 'info':
+                    iconClass = 'bi-info-circle-fill text-info';
+                    bgClass = 'bg-info text-white';
+                    break;
+                default:
+                    iconClass = 'bi-info-circle-fill text-primary';
+                    bgClass = 'bg-primary text-white';
+            }
+            
+            // Update toast content
+            toastIcon.className = `bi ${iconClass}`;
+            toastTitle.textContent = title;
+            toastBody.textContent = message;
+            
+            // Update toast styling
+            toast.className = `toast ${bgClass}`;
+            
+            // Show the toast
+            const bsToast = new bootstrap.Toast(toast, {
+                autohide: true,
+                delay: duration
+            });
+            bsToast.show();
+        }
+
+        // Logout Function
+        function logout() {
+            // Clear all stored data
+            localStorage.removeItem('apiKey');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('username');
+            localStorage.removeItem('displayName');
+            
+            // Redirect to landing page
+            window.location.href = '/';
+        }
+
+        // Timezone management
+        let userTimezone = 'Asia/Tehran'; // Default timezone
+        let availableTimezones = [];
+
+        // Load user timezone
+        async function loadUserTimezone() {
+            try {
+                const apiKey = localStorage.getItem('apiKey');
+                const response = await fetch('/users/timezone', {
+                    headers: {
+                        'X-API-Key': apiKey
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    userTimezone = data.timezone;
+                    availableTimezones = data.available_timezones;
+                }
+            } catch (error) {
+                console.error('Error loading user timezone:', error);
+            }
+        }
+
+        // Open timezone settings modal
+        async function openTimezoneSettings() {
+            console.log('openTimezoneSettings called - version 1.4');
+            // Ensure timezone data is loaded before opening modal
+            if (!availableTimezones || Object.keys(availableTimezones).length === 0) {
+                console.log('Timezone data not loaded, loading now...');
+                await loadUserTimezone();
+            }
+            
+            const modal = new bootstrap.Modal(document.getElementById('timezoneSettingsModal'));
+            populateTimezoneCountrySelect();
+            setupTimezoneEventListeners(); // Set up event listeners after modal is opened
+            modal.show();
+        }
+
+        // Populate timezone country select dropdown
+        function populateTimezoneCountrySelect() {
+            const countrySelect = document.getElementById('timezoneCountrySelect');
+            const citySelect = document.getElementById('timezoneCitySelect');
+            
+            // Clear both selects
+            countrySelect.innerHTML = '<option value="">Select a country</option>';
+            citySelect.innerHTML = '<option value="">Select a country first</option>';
+            citySelect.disabled = true;
+            
+            if (!availableTimezones || typeof availableTimezones !== 'object') {
+                console.error('Available timezones is not an object:', availableTimezones);
+                return;
+            }
+            
+            // Add countries to the dropdown
+            Object.keys(availableTimezones).forEach(country => {
+                const option = document.createElement('option');
+                option.value = country;
+                option.textContent = country;
+                countrySelect.appendChild(option);
+            });
+            
+            // Try to pre-select the current user's country
+            const currentUserTimezone = userTimezone;
+            if (currentUserTimezone) {
+                for (const [country, cities] of Object.entries(availableTimezones)) {
+                    for (const city of cities) {
+                        if (city.value === currentUserTimezone) {
+                            countrySelect.value = country;
+                            populateTimezoneCitySelect(country);
+                            // Find and select the current city
+                            for (const cityOption of citySelect.options) {
+                                if (cityOption.value === currentUserTimezone) {
+                                    cityOption.selected = true;
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            updateTimezonePreview();
+        }
+
+        // Populate timezone city select dropdown
+        function populateTimezoneCitySelect(country) {
+            const citySelect = document.getElementById('timezoneCitySelect');
+            citySelect.innerHTML = '<option value="">Select a city</option>';
+            
+            if (!country || !availableTimezones[country]) {
+                citySelect.disabled = true;
+                return;
+            }
+            
+            citySelect.disabled = false;
+            
+            availableTimezones[country].forEach(city => {
+                const option = document.createElement('option');
+                option.value = city.value;
+                option.textContent = city.label;
+                citySelect.appendChild(option);
+            });
+        }
+
+        // Set up timezone event listeners
+        function setupTimezoneEventListeners() {
+            const countrySelect = document.getElementById('timezoneCountrySelect');
+            const citySelect = document.getElementById('timezoneCitySelect');
+            
+            if (countrySelect) {
+                countrySelect.addEventListener('change', function() {
+                    const selectedCountry = this.value;
+                    populateTimezoneCitySelect(selectedCountry);
+                    updateTimezonePreview();
+                });
+            }
+            
+            if (citySelect) {
+                citySelect.addEventListener('change', updateTimezonePreview);
+            }
+        }
+
+        // Update timezone preview
+        function updateTimezonePreview() {
+            const citySelect = document.getElementById('timezoneCitySelect');
+            const preview = document.getElementById('timezonePreview');
+            const selectedTimezone = citySelect.value;
+            
+            if (selectedTimezone) {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('en-US', {
+                    hour12: false,
+                    timeZone: selectedTimezone
+                });
+                const timezoneAbbr = getTimezoneAbbreviation(selectedTimezone);
+                preview.textContent = `${timeString} ${timezoneAbbr}`;
+            } else {
+                preview.textContent = '--:--';
+            }
+        }
+
+        // Get timezone abbreviation
+        function getTimezoneAbbreviation(timezone) {
+            const date = new Date();
+            const options = { timeZoneName: 'short' };
+            return date.toLocaleDateString('en-US', options).split(', ')[1];
+        }
+
+        // Update user timezone
+        async function updateTimezone() {
+            const citySelect = document.getElementById('timezoneCitySelect');
+            const newTimezone = citySelect.value;
+            
+            if (!newTimezone) {
+                showToast('warning', 'Validation Error', 'Please select a city');
+                return;
+            }
+
+            try {
+                const apiKey = localStorage.getItem('apiKey');
+                const response = await fetch('/users/timezone', {
+                    method: 'POST',
+                    headers: {
+                        'X-API-Key': apiKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        timezone: newTimezone
+                    })
+                });
+
+                if (response.ok) {
+                    userTimezone = newTimezone;
+                    showToast('success', 'Success!', 'Timezone updated successfully!');
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('timezoneSettingsModal'));
+                    modal.hide();
+                    
+                    // Regenerate report with new timezone
+                    if (reportData) {
+                        generateReport();
+                    }
+                } else {
+                    const errorData = await response.json();
+                    showToast('error', 'Error', `Failed to update timezone: ${errorData.detail || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error('Error updating timezone:', error);
+                showToast('error', 'Error', `Error updating timezone: ${error.message}`);
+            }
+        }
+
+        // Load timezone on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                loadUserTimezone();
+            }, 1000);
+        });
+    </script>
+
+    <!-- Timezone Settings Modal -->
+    <div class="modal fade" id="timezoneSettingsModal" tabindex="-1" aria-labelledby="timezoneSettingsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="timezoneSettingsModalLabel">
+                        <i class="bi bi-gear me-2"></i>
+                        Timezone Settings
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="timezoneSettingsForm">
+                        <div class="mb-3">
+                            <label for="timezoneCountrySelect" class="form-label">Select Country</label>
+                            <select class="form-select" id="timezoneCountrySelect" required>
+                                <option value="">Loading countries...</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="timezoneCitySelect" class="form-label">Select City</label>
+                            <select class="form-select" id="timezoneCitySelect" required disabled>
+                                <option value="">Select a country first</option>
+                            </select>
+                            <div class="form-text">This will affect how times are displayed throughout the app.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Current Time in Selected Timezone</label>
+                            <div class="form-control-plaintext" id="timezonePreview">--:--</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="updateTimezone()">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Save Timezone
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</body>
+</html> 

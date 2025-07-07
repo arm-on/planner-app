@@ -1,0 +1,665 @@
+body {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    min-height: 100vh;
+}
+
+.dashboard-header {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Header Logo */
+.header-logo {
+    width: 50px !important;
+    height: 50px !important;
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
+    border-radius: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: white !important;
+    font-size: 1.5rem !important;
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3) !important;
+}
+
+.header-title {
+    color: #2c3e50 !important;
+    font-weight: 600 !important;
+    font-size: 1.5rem !important;
+}
+
+.header-subtitle {
+    font-size: 0.85rem !important;
+    color: #7f8c8d !important;
+}
+
+/* Header Navigation */
+.header-nav {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 1rem !important;
+}
+
+.user-welcome {
+    text-align: right !important;
+}
+
+.welcome-container {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 15px !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    transition: all 0.3s ease !important;
+}
+
+.welcome-container:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+.welcome-icon {
+    width: 40px !important;
+    height: 40px !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: white !important;
+    font-size: 1.2rem !important;
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3) !important;
+}
+
+.welcome-text {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+}
+
+.welcome-greeting {
+    color: #7f8c8d !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    margin-bottom: 0.1rem !important;
+}
+
+.user-name {
+    color: #2c3e50 !important;
+    font-weight: 700 !important;
+    font-size: 1.2rem !important;
+    display: block !important;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+
+/* Welcome Message Row */
+.welcome-message-row {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 0.5rem 0 !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
+    margin-top: 0.5rem !important;
+}
+
+.welcome-message-row .welcome-container {
+    background: rgba(255, 255, 255, 0.7) !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 20px !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.welcome-message-row .welcome-icon {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 1.2rem !important;
+}
+
+.welcome-message-row .welcome-text {
+    gap: 0.3rem !important;
+}
+
+.nav-buttons {
+    display: flex !important;
+    gap: 0.5rem !important;
+    align-items: center !important;
+}
+
+.nav-btn {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    padding: 0.6rem 1rem !important;
+    border: none !important;
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.8) !important;
+    color: #2c3e50 !important;
+    text-decoration: none !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+}
+
+.nav-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+    text-decoration: none !important;
+}
+
+.nav-btn i {
+    font-size: 1rem !important;
+}
+
+.btn-text {
+    display: inline !important;
+}
+
+/* Specific button styles */
+.timezone-btn {
+    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%) !important;
+    color: white !important;
+}
+
+.timezone-btn:hover {
+    background: linear-gradient(135deg, #7f8c8d 0%, #6c7b7d 100%) !important;
+    color: white !important;
+}
+
+.reports-btn {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
+    color: white !important;
+}
+
+.reports-btn:hover {
+    background: linear-gradient(135deg, #2980b9 0%, #21618c 100%) !important;
+    color: white !important;
+}
+
+.assistant-btn {
+    background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%) !important;
+    color: white !important;
+}
+
+.assistant-btn:hover {
+    background: linear-gradient(135deg, #8e44ad 0%, #7d3c98 100%) !important;
+    color: white !important;
+}
+
+.logout-btn {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
+    color: white !important;
+}
+
+.logout-btn:hover {
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%) !important;
+    color: white !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .header-nav {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.5rem;
+    }
+    
+    .nav-buttons {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    
+    .btn-text {
+        display: none;
+    }
+    
+    .nav-btn {
+        padding: 0.5rem;
+        min-width: 40px;
+        justify-content: center;
+    }
+    
+    .user-welcome {
+        text-align: center;
+    }
+    
+    .welcome-container {
+        flex-direction: column !important;
+        text-align: center !important;
+        padding: 0.5rem !important;
+    }
+    
+    .welcome-text {
+        align-items: center !important;
+        flex-direction: row !important;
+    }
+
+    /* Mobile calendar adjustments */
+    #calendarContainer {
+        max-height: 400px;
+        overflow-x: auto;
+    }
+
+    .calendar-weekdays {
+        grid-template-columns: repeat(7, 80px);
+        min-width: 560px;
+    }
+
+    .calendar-days {
+        grid-template-columns: repeat(7, 80px);
+        min-width: 560px;
+    }
+
+    .calendar-day {
+        min-height: 60px;
+        padding: 4px;
+    }
+
+    .calendar-day-number {
+        font-size: 0.9rem;
+    }
+
+    .calendar-day-activities {
+        font-size: 0.6rem;
+    }
+
+    .calendar-day-activity {
+        font-size: 0.55rem;
+        padding: 1px 2px;
+    }
+}
+
+.main-content {
+    padding: 2rem 0;
+}
+
+.card {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(15px);
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+}
+
+.current-activity {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+}
+
+.schedule-item {
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.schedule-item:hover {
+    transform: translateX(5px);
+    border-left-color: #667eea;
+}
+
+.clock-in-time {
+    color: #2c3e50;
+    font-size: 1.1em;
+}
+
+/* Specific styling for current time display */
+#currentTime {
+    color: #ffffff !important;
+    font-size: 2rem;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.clock-out-time {
+    color: #27ae60;
+    font-size: 1.1em;
+}
+
+.duration-time {
+    color: #3498db;
+    font-size: 0.9em;
+}
+
+.time-info {
+    background: rgba(52, 152, 219, 0.1);
+    padding: 8px;
+    border-radius: 8px;
+    border-left: 3px solid #3498db;
+}
+
+.activity-date {
+    font-size: 0.85em;
+    margin-bottom: 4px;
+}
+
+.pagination .page-link {
+    color: #3498db;
+    border-color: #dee2e6;
+}
+
+.pagination .page-link:hover {
+    color: #2980b9;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #6c757d;
+    background-color: #fff;
+    border-color: #dee2e6;
+}
+
+.time-badge {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    border-radius: 20px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.time-info {
+    text-align: center;
+}
+
+.time-info small {
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+
+.duration-badge {
+    color: #27ae60;
+    font-weight: 600;
+}
+
+.project-badge {
+    border-radius: 15px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.btn-clock {
+    border-radius: 25px;
+    padding: 0.5rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border-width: 2px;
+}
+
+.btn-clock:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.activity-form {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 15px;
+    padding: 1.5rem;
+}
+
+.clock-in-time {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #3498db;
+}
+
+.current-task {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    color: white;
+}
+
+.off-schedule {
+    background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
+    color: white;
+}
+
+/* Fix modal scrolling issues */
+.modal {
+    overflow-y: auto !important;
+}
+
+.modal-dialog {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-content {
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+    overflow: hidden;
+    padding-right: 0 !important;
+}
+
+/* Ensure modals are properly positioned */
+.modal-backdrop {
+    z-index: 1040;
+}
+
+.modal {
+    z-index: 1050;
+}
+
+/* Fix for Vivaldi and other browsers */
+html, body {
+    overflow-x: hidden;
+}
+
+/* Ensure proper modal behavior */
+.modal.show {
+    display: block !important;
+}
+
+/* Recurring activity styling */
+.recurring-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+}
+
+.recurring-card .card-title {
+    color: #495057;
+}
+
+.form-check-input:checked {
+    background-color: #3498db;
+    border-color: #3498db;
+}
+
+/* Calendar Styles */
+.calendar-grid {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Calendar Container with scrolling */
+#calendarContainer {
+    max-height: 600px;
+    overflow-y: auto;
+    overflow-x: auto;
+    border-radius: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: #c1c1c1 #f1f1f1;
+    width: 100%;
+}
+
+#calendarContainer::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+#calendarContainer::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#calendarContainer::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+#calendarContainer::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Ensure calendar grid stays within container */
+.calendar-grid {
+    min-height: 400px;
+    width: max-content;
+    min-width: 100%;
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 100px);
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+    font-weight: 600;
+    min-width: 700px;
+}
+
+.calendar-weekday {
+    padding: 12px 8px;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 100px);
+    gap: 1px;
+    background: #e9ecef;
+    min-width: 700px;
+}
+
+.calendar-day {
+    background: white;
+    min-height: 80px;
+    padding: 8px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid #f8f9fa;
+}
+
+.calendar-day:hover {
+    background: #f8f9fa;
+    transform: scale(1.02);
+}
+
+.calendar-day.other-month {
+    background: #f8f9fa;
+    color: #adb5bd;
+}
+
+.calendar-day.today {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+    font-weight: bold;
+}
+
+.calendar-day.has-activities {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    color: white;
+}
+
+.calendar-day.has-activities.today {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+}
+
+.calendar-day-number {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.calendar-day-activities {
+    font-size: 0.7rem;
+    line-height: 1.2;
+}
+
+.calendar-day-activity {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 4px;
+    border-radius: 3px;
+    margin-bottom: 2px;
+    font-size: 0.65rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.calendar-sidebar {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 10px;
+    height: 100%;
+}
+
+.upcoming-activities {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.upcoming-activity-item {
+    background: white;
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.upcoming-activity-item.doing {
+    border-left-color: #f39c12;
+}
+
+.upcoming-activity-item.done {
+    border-left-color: #27ae60;
+}
+
+.upcoming-activity-time {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 4px;
+}
+
+.upcoming-activity-title {
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.upcoming-activity-project {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+/* Reminder Styles */
+.reminder-item {
+    transition: all 0.2s ease;
+}
+
+.reminder-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.reminder-item.border-danger {
+    background-color: rgba(220, 53, 69, 0.05);
+}

@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant - Planner App</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            min-height: 100vh;
+        }
+        
+        .assistant-header {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Header Logo */
+        .header-logo {
+            width: 50px !important;
+            height: 50px !important;
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%) !important;
+            border-radius: 12px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            color: white !important;
+            font-size: 1.5rem !important;
+            box-shadow: 0 4px 15px rgba(155, 89, 182, 0.3) !important;
+        }
+
+        .header-title {
+            color: #2c3e50 !important;
+            font-weight: 600 !important;
+            font-size: 1.5rem !important;
+        }
+
+        .header-subtitle {
+            font-size: 0.85rem !important;
+            color: #7f8c8d !important;
+        }
+
+        /* Header Navigation */
+        .header-nav {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+            gap: 1rem !important;
+        }
+
+        .nav-buttons {
+            display: flex !important;
+            gap: 0.5rem !important;
+            align-items: center !important;
+        }
+
+        .nav-btn {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            padding: 0.6rem 1rem !important;
+            border: none !important;
+            border-radius: 10px !important;
+            background: rgba(255, 255, 255, 0.8) !important;
+            color: #2c3e50 !important;
+            text-decoration: none !important;
+            font-size: 0.9rem !important;
+            font-weight: 500 !important;
+            transition: all 0.3s ease !important;
+            backdrop-filter: blur(10px) !important;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+            text-decoration: none !important;
+        }
+
+        .nav-btn i {
+            font-size: 1rem !important;
+        }
+
+        .btn-text {
+            display: inline !important;
+        }
+
+        /* Specific button styles */
+        .timezone-btn {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%) !important;
+            color: white !important;
+        }
+
+        .timezone-btn:hover {
+            background: linear-gradient(135deg, #7f8c8d 0%, #6c7b7d 100%) !important;
+            color: white !important;
+        }
+
+        .dashboard-btn {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%) !important;
+            color: white !important;
+        }
+
+        .dashboard-btn:hover {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%) !important;
+            color: white !important;
+        }
+
+        .reports-btn {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
+            color: white !important;
+        }
+
+        .reports-btn:hover {
+            background: linear-gradient(135deg, #2980b9 0%, #21618c 100%) !important;
+            color: white !important;
+        }
+
+        .logout-btn {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
+            color: white !important;
+        }
+
+        .logout-btn:hover {
+            background: linear-gradient(135deg, #c0392b 0%, #a93226 100%) !important;
+            color: white !important;
+        }
+
+        /* Welcome Message Row */
+        .welcome-message-row {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            padding: 0.5rem 0 !important;
+            border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
+        }
+
+        .welcome-container {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.75rem !important;
+            background: rgba(255, 255, 255, 0.9) !important;
+            padding: 0.5rem 1rem !important;
+            border-radius: 15px !important;
+            backdrop-filter: blur(10px) !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .welcome-container:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .welcome-icon {
+            width: 30px !important;
+            height: 30px !important;
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%) !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            color: white !important;
+            font-size: 1rem !important;
+        }
+
+        .welcome-text {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+        }
+
+        .welcome-greeting {
+            color: #7f8c8d !important;
+            font-size: 0.9rem !important;
+        }
+
+        .user-name {
+            color: #2c3e50 !important;
+            font-weight: 700 !important;
+            font-size: 1.2rem !important;
+            display: block !important;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-nav {
+                justify-content: center !important;
+                margin-top: 1rem !important;
+            }
+
+            .nav-buttons {
+                flex-wrap: wrap !important;
+                justify-content: center !important;
+            }
+
+            .welcome-container {
+                flex-direction: column !important;
+                text-align: center !important;
+                padding: 0.5rem !important;
+            }
+
+            .welcome-text {
+                align-items: center !important;
+                flex-direction: row !important;
+            }
+        }
+        
+        .main-content {
+            padding: 2rem 0;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+            margin-bottom: 1.5rem;
+        }
+        
+        .prompt-textarea {
+            min-height: 200px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .response-box {
+            min-height: 300px;
+            max-height: 600px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+        }
+        
+        .btn-send {
+            border-radius: 25px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border-width: 2px;
+        }
+        
+        .btn-send:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-outline-primary {
+            border-color: #3498db;
+            color: #3498db;
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: #3498db;
+            border-color: #3498db;
+            color: white;
+        }
+        
+        .text-primary {
+            color: #3498db !important;
+        }
+        
+        .text-danger {
+            color: #e74c3c !important;
+        }
+        
+        .loading {
+            display: none;
+        }
+        
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+        
+        .model-selector {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="assistant-header">
+        <div class="container">
+            <div class="row align-items-center py-3">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <div class="header-logo me-3">
+                            <i class="bi bi-robot"></i>
+                        </div>
+                        <div>
+                            <div class="header-title">AI Assistant</div>
+                            <div class="header-subtitle">Smart Planning Helper</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="header-nav">
+                        <div class="nav-buttons">
+                            <a href="/dashboard" class="nav-btn dashboard-btn" title="Go to Dashboard">
+                                <i class="bi bi-house"></i>
+                                <span class="btn-text">Dashboard</span>
+                            </a>
+                            <a href="/reports" class="nav-btn reports-btn" title="View Reports">
+                                <i class="bi bi-graph-up"></i>
+                                <span class="btn-text">Reports</span>
+                            </a>
+                            <button class="nav-btn timezone-btn" onclick="openTimezoneSettings()" title="Change Timezone">
+                                <i class="bi bi-gear"></i>
+                                <span class="btn-text">Timezone</span>
+                            </button>
+                            <a href="#" onclick="logout()" class="nav-btn logout-btn" title="Logout">
+                                <i class="bi bi-box-arrow-right"></i>
+                                <span class="btn-text">Logout</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Welcome Message Row -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="welcome-message-row">
+                        <div class="welcome-container">
+                            <div class="welcome-icon">
+                                <i class="bi bi-person-circle"></i>
+                            </div>
+                            <div class="welcome-text">
+                                <span class="welcome-greeting">Welcome back, </span>
+                                <span class="user-name" id="userName"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <!-- Model Selection -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card model-selector">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">
+                                <i class="bi bi-gear me-2"></i>
+                                Select AI Model
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <label for="modelSelect" class="form-label">Choose Model</label>
+                                    <select class="form-select" id="modelSelect" onchange="updateModelInfo()">
+                                        <option value="">Select a model...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <div id="modelInfo" class="mt-3" style="display: none;">
+                                        <small class="text-muted">
+                                            <strong>Base URL:</strong> <span id="modelBaseUrl"></span><br>
+                                            <strong>Model:</strong> <span id="modelName"></span>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Prompt -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-cpu me-2"></i>
+                                System Prompt
+                                <button class="btn btn-sm btn-outline-primary float-end" onclick="generateSystemPrompt()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>Regenerate
+                                </button>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <textarea class="form-control prompt-textarea" id="systemPrompt" placeholder="System prompt will be generated automatically..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Prompt -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-person me-2"></i>
+                                Your Request
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <textarea class="form-control prompt-textarea" id="userPrompt" placeholder="Describe what you want the AI to help you with... (e.g., generate a plan for tomorrow based on my tasks which includes 2 hours of practicing sports)"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Send Button -->
+            <div class="row mb-4">
+                <div class="col-12 text-center">
+                    <button class="btn btn-outline-primary btn-send" onclick="sendRequest()" id="sendButton">
+                        <i class="bi bi-send me-2"></i>
+                        Send Request
+                    </button>
+                    <div class="loading mt-2" id="loadingIndicator">
+                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <span class="text-muted">Processing request...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Response -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-chat-dots me-2"></i>
+                                AI Response
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="response-box" id="responseBox">
+                                <div class="text-muted text-center">
+                                    <i class="bi bi-robot fs-1"></i>
+                                    <p class="mt-2">AI assistant will respond here...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;">
+        <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i id="toastIcon" class="bi me-2"></i>
+                <strong id="toastTitle" class="me-auto"></strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div id="toastBody" class="toast-body"></div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let models = [];
+        let userData = null;
+        let projects = [];
+        let tasks = [];
+        let activities = [];
+        let reminders = [];
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Assistant page initializing...');
+            
+            // Check API key first
+            const apiKey = localStorage.getItem('apiKey');
+            console.log('API key found:', !!apiKey);
+            
+            if (!apiKey) {
+                console.log('No API key found, redirecting to login...');
+                window.location.href = '/login';
+                return;
+            }
+            
+            loadUserInfo();
+            loadModels();
+            loadData();
+        });
+
+        function loadUserInfo() {
+            console.log('Loading user info...');
+            const displayName = localStorage.getItem('displayName');
+            const username = localStorage.getItem('username');
+            const userName = displayName || username || 'User';
+            
+            const userNameElement = document.getElementById('userName');
+            if (userNameElement) {
+                userNameElement.textContent = userName;
+            }
+        }
+
+        async function loadModels() {
+            try {
+                const apiKey = localStorage.getItem('apiKey');
+                if (!apiKey) {
+                    console.error('No API key found for loading models');
+                    return;
+                }
+
+                const response = await fetch('/models/', {
+                    headers: {
+                        'X-API-Key': apiKey
+                    }
+                });
+
+                if (response.ok) {
+                    models = await response.json();
+                    console.log('Loaded models:', models);
+                    
+                    const modelSelect = document.getElementById('modelSelect');
+                    modelSelect.innerHTML = '<option value="">Select a model...</option>';
+                    
+                    models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.api_key;
+                        option.textContent = `${model.name} (${model.base_url})`;
+                        modelSelect.appendChild(option);
+                    });
+                } else {
+                    console.error('Failed to load models:', response.status);
+                    showToast('Error', 'Failed to load models', 'danger');
+                }
+            } catch (error) {
+                console.error('Error loading models:', error);
+                showToast('Error', 'Failed to load models', 'danger');
+            }
+        }
+
+        async function loadData() {
+            try {
+                const apiKey = localStorage.getItem('apiKey');
+                if (!apiKey) return;
+
+                // Load all data in parallel
+                const [projectsRes, tasksRes, activitiesRes, remindersRes] = await Promise.all([
+                    fetch('/projects/', { headers: { 'X-API-Key': apiKey } }),
+                    fetch('/tasks/', { headers: { 'X-API-Key': apiKey } }),
+                    fetch('/activities/', { headers: { 'X-API-Key': apiKey } }),
+                    fetch('/reminders/today', { headers: { 'X-API-Key': apiKey } })
+                ]);
+
+                if (projectsRes.ok) projects = await projectsRes.json();
+                if (tasksRes.ok) tasks = await tasksRes.json();
+                if (activitiesRes.ok) activities = await activitiesRes.json();
+                if (remindersRes.ok) reminders = await remindersRes.json();
+
+                console.log('Loaded data:', { projects: projects.length, tasks: tasks.length, activities: activities.length, reminders: reminders.length });
+                
+                // Generate initial system prompt
+                generateSystemPrompt();
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showToast('Error', 'Failed to load data', 'danger');
+            }
+        }
+
+        function generateSystemPrompt() {
+            const systemPrompt = `You are an AI assistant helping with task and project management. Here is the current context:
+
+PROJECTS (${projects.length}):
+${projects.map(p => `- ID: ${p.id}, Name: ${p.name}, Color: ${p.color}, Owner: ${p.owner}`).join('\n')}
+
+TASKS (${tasks.length}):
+${tasks.map(t => {
+    const deadline = t.deadline ? new Date(t.deadline).toLocaleString() : 'No deadline';
+    const energyLevel = t.energy_level === 3 ? 'HIGH' : t.energy_level === 2 ? 'MEDIUM' : 'LOW';
+    const importance = t.is_important ? 'IMPORTANT' : 'Not important';
+    const urgency = t.is_urgent ? 'URGENT' : 'Not urgent';
+    const parentInfo = t.parent_task_id ? ` (Parent Task ID: ${t.parent_task_id})` : '';
+    return `- ID: ${t.id}, Title: ${t.title}, Project ID: ${t.proj_id}, State: ${t.state}, Energy Level: ${energyLevel}, ${importance}, ${urgency}, Deadline: ${deadline}, Progress ID: ${t.progress_id}${parentInfo}`;
+}).join('\n')}
+
+ACTIVITIES (${activities.length}):
+${activities.map(a => {
+    const clockIn = a.clock_in ? new Date(a.clock_in).toLocaleString() : 'No clock-in';
+    const clockOut = a.clock_out ? new Date(a.clock_out).toLocaleString() : 'No clock-out';
+    const duration = a.clock_out && a.clock_in ? 
+        Math.round((new Date(a.clock_out) - new Date(a.clock_in)) / (1000 * 60)) + ' minutes' : 'Ongoing';
+    return `- ID: ${a.id}, Task ID: ${a.task_id}, Status: ${a.status}, Description: ${a.description || 'No description'}, Clock In: ${clockIn}, Clock Out: ${clockOut}, Duration: ${duration}`;
+}).join('\n')}
+
+REMINDERS (${reminders.length}):
+${reminders.map(r => {
+    const reminderTime = r.reminder_time ? new Date(r.reminder_time).toLocaleString() : 'No reminder time';
+    return `- ID: ${r.id}, Title: ${r.title}, Description: ${r.description || 'No description'}, Reminder Time: ${reminderTime}, Task ID: ${r.task_id || 'No task'}`;
+}).join('\n')}
+
+Please help the user with their planning and task management needs. Provide actionable advice, suggestions, and plans based on their current projects, tasks, and activities. Consider the energy levels, importance, urgency, deadlines, and time tracking data when making recommendations.`;
+
+            document.getElementById('systemPrompt').value = systemPrompt;
+        }
+
+        function updateModelInfo() {
+            const modelSelect = document.getElementById('modelSelect');
+            const modelInfo = document.getElementById('modelInfo');
+            const modelBaseUrl = document.getElementById('modelBaseUrl');
+            const modelName = document.getElementById('modelName');
+
+            if (modelSelect.value) {
+                const selectedModel = models.find(m => m.api_key == modelSelect.value);
+                if (selectedModel) {
+                    modelBaseUrl.textContent = selectedModel.base_url;
+                    modelName.textContent = selectedModel.name;
+                    modelInfo.style.display = 'block';
+                }
+            } else {
+                modelInfo.style.display = 'none';
+            }
+        }
+
+        async function sendRequest() {
+            const modelSelect = document.getElementById('modelSelect');
+            const systemPrompt = document.getElementById('systemPrompt').value;
+            const userPrompt = document.getElementById('userPrompt').value;
+            const sendButton = document.getElementById('sendButton');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const responseBox = document.getElementById('responseBox');
+
+            if (!modelSelect.value) {
+                showToast('Error', 'Please select a model first', 'warning');
+                return;
+            }
+
+            if (!userPrompt.trim()) {
+                showToast('Error', 'Please enter your request', 'warning');
+                return;
+            }
+
+            const selectedModel = models.find(m => m.api_key == modelSelect.value);
+            if (!selectedModel) {
+                showToast('Error', 'Selected model not found', 'danger');
+                return;
+            }
+
+            // Show loading state
+            sendButton.disabled = true;
+            loadingIndicator.style.display = 'block';
+            responseBox.innerHTML = '<div class="text-muted text-center"><div class="spinner-border spinner-border-sm me-2"></div>Processing...</div>';
+
+            try {
+                const apiKey = localStorage.getItem('apiKey');
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': apiKey
+                    },
+                    body: JSON.stringify({
+                        model_api_key: selectedModel.api_key,
+                        system_prompt: systemPrompt,
+                        user_prompt: userPrompt
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    responseBox.innerHTML = `<div class="text-success mb-2"><i class="bi bi-check-circle me-2"></i>Response received</div><div class="border-top pt-2">${result.response}</div>`;
+                    showToast('Success', 'Request processed successfully', 'success');
+                } else {
+                    const errorData = await response.json();
+                    responseBox.innerHTML = `<div class="text-danger mb-2"><i class="bi bi-exclamation-triangle me-2"></i>Error: ${errorData.detail || 'Failed to process request'}</div>`;
+                    showToast('Error', 'Failed to process request', 'danger');
+                }
+            } catch (error) {
+                console.error('Error sending request:', error);
+                responseBox.innerHTML = `<div class="text-danger mb-2"><i class="bi bi-exclamation-triangle me-2"></i>Error: ${error.message}</div>`;
+                showToast('Error', 'Failed to send request', 'danger');
+            } finally {
+                // Hide loading state
+                sendButton.disabled = false;
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        function showToast(title, message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastTitle = document.getElementById('toastTitle');
+            const toastBody = document.getElementById('toastBody');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastTitle.textContent = title;
+            toastBody.textContent = message;
+            
+            // Set icon based on type
+            toastIcon.className = `bi ${type === 'success' ? 'bi-check-circle text-success' : 
+                                   type === 'danger' ? 'bi-exclamation-triangle text-danger' : 
+                                   type === 'warning' ? 'bi-exclamation-triangle text-warning' : 
+                                   'bi-info-circle text-info'}`;
+
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = '/';
+        }
+
+        // Timezone management
+        let userTimezone = 'Asia/Tehran'; // Default timezone
+        let availableTimezones = [];
+
+        // Load user timezone
+        async function loadUserTimezone() {
+            try {
+                const apiKey = localStorage.getItem('apiKey');
+                const response = await fetch('/users/timezone', {
+                    headers: {
+                        'X-API-Key': apiKey
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    userTimezone = data.timezone;
+                    availableTimezones = data.available_timezones;
+                }
+            } catch (error) {
+                console.error('Error loading user timezone:', error);
+            }
+        }
+
+        // Open timezone settings modal
+        async function openTimezoneSettings() {
+            console.log('openTimezoneSettings called - version 1.4');
+            // Ensure timezone data is loaded before opening modal
+            if (!availableTimezones || Object.keys(availableTimezones).length === 0) {
+                console.log('Timezone data not loaded, loading now...');
+                await loadUserTimezone();
+            }
+            
+            const modal = new bootstrap.Modal(document.getElementById('timezoneSettingsModal'));
+            populateTimezoneCountrySelect();
+            setupTimezoneEventListeners(); // Set up event listeners after modal is opened
+            modal.show();
+        }
+
+        // Populate timezone country select dropdown
+        function populateTimezoneCountrySelect() {
+            const countrySelect = document.getElementById('timezoneCountrySelect');
+            const citySelect = document.getElementById('timezoneCitySelect');
+            
+            // Clear both selects
+            countrySelect.innerHTML = '<option value="">Select a country</option>';
+            citySelect.innerHTML = '<option value="">Select a country first</option>';
+            citySelect.disabled = true;
+            
+            if (!availableTimezones || typeof availableTimezones !== 'object') {
+                console.error('Available timezones is not an object:', availableTimezones);
+                return;
+            }
+            
+            // Add countries to the dropdown
+            Object.keys(availableTimezones).forEach(country => {
+                const option = document.createElement('option');
+                option.value = country;
+                option.textContent = country;
+                countrySelect.appendChild(option);
+            });
+            
+            // Try to pre-select the current user's country
+            const currentUserTimezone = userTimezone;
+            if (currentUserTimezone) {
+                for (const [country, cities] of Object.entries(availableTimezones)) {
+                    for (const city of cities) {
+                        if (city.value === currentUserTimezone) {
+                            countrySelect.value = country;
+                            populateTimezoneCitySelect(country);
+                            // Find and select the current city
+                            for (const cityOption of citySelect.options) {
+                                if (cityOption.value === currentUserTimezone) {
+                                    cityOption.selected = true;
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            updateTimezonePreview();
+        }
+
+        // Populate timezone city select dropdown
+        function populateTimezoneCitySelect(country) {
+            const citySelect = document.getElementById('timezoneCitySelect');
+            citySelect.innerHTML = '<option value="">Select a city</option>';
+            
+            if (!country || !availableTimezones[country]) {
+                citySelect.disabled = true;
+                return;
+            }
+            
+            citySelect.disabled = false;
+            
+            availableTimezones[country].forEach(city => {
+                const option = document.createElement('option');
+                option.value = city.value;
+                option.textContent = city.label;
+                citySelect.appendChild(option);
+            });
+        }
+
+        // Set up timezone event listeners
+        function setupTimezoneEventListeners() {
+            const countrySelect = document.getElementById('timezoneCountrySelect');
+            const citySelect = document.getElementById('timezoneCitySelect');
+            
+            if (countrySelect) {
+                countrySelect.addEventListener('change', function() {
+                    const selectedCountry = this.value;
+                    populateTimezoneCitySelect(selectedCountry);
+                    updateTimezonePreview();
+                });
+            }
+            
+            if (citySelect) {
+                citySelect.addEventListener('change', updateTimezonePreview);
+            }
+        }
+
+        // Update timezone preview
+        function updateTimezonePreview() {
+            const citySelect = document.getElementById('timezoneCitySelect');
+            const preview = document.getElementById('timezonePreview');
+            const selectedTimezone = citySelect.value;
+            
+            if (selectedTimezone) {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('en-US', {
+                    hour12: false,
+                    timeZone: selectedTimezone
+                });
+                const timezoneAbbr = getTimezoneAbbreviation(selectedTimezone);
+                preview.textContent = `${timeString} ${timezoneAbbr}`;
+            } else {
+                preview.textContent = '--:--';
+            }
+        }
+
+        // Get timezone abbreviation
+        function getTimezoneAbbreviation(timezone) {
+            const date = new Date();
+            const options = { timeZoneName: 'short' };
+            return date.toLocaleDateString('en-US', options).split(', ')[1];
+        }
+
+        // Update user timezone
+        async function updateTimezone() {
+            const citySelect = document.getElementById('timezoneCitySelect');
+            const newTimezone = citySelect.value;
+            
+            if (!newTimezone) {
+                showToast('Validation Error', 'Please select a city', 'warning');
+                return;
+            }
+
+            try {
+                const apiKey = localStorage.getItem('apiKey');
+                const response = await fetch('/users/timezone', {
+                    method: 'POST',
+                    headers: {
+                        'X-API-Key': apiKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        timezone: newTimezone
+                    })
+                });
+
+                if (response.ok) {
+                    userTimezone = newTimezone;
+                    showToast('Success!', 'Timezone updated successfully!', 'success');
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('timezoneSettingsModal'));
+                    modal.hide();
+                } else {
+                    const errorData = await response.json();
+                    showToast('Error', `Failed to update timezone: ${errorData.detail || 'Unknown error'}`, 'danger');
+                }
+            } catch (error) {
+                console.error('Error updating timezone:', error);
+                showToast('Error', `Error updating timezone: ${error.message}`, 'danger');
+            }
+        }
+
+        // Load timezone on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                loadUserTimezone();
+            }, 1000);
+        });
+    </script>
+
+    <!-- Timezone Settings Modal -->
+    <div class="modal fade" id="timezoneSettingsModal" tabindex="-1" aria-labelledby="timezoneSettingsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="timezoneSettingsModalLabel">
+                        <i class="bi bi-gear me-2"></i>
+                        Timezone Settings
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="timezoneSettingsForm">
+                        <div class="mb-3">
+                            <label for="timezoneCountrySelect" class="form-label">Select Country</label>
+                            <select class="form-select" id="timezoneCountrySelect" required>
+                                <option value="">Loading countries...</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="timezoneCitySelect" class="form-label">Select City</label>
+                            <select class="form-select" id="timezoneCitySelect" required disabled>
+                                <option value="">Select a country first</option>
+                            </select>
+                            <div class="form-text">This will affect how times are displayed throughout the app.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Current Time in Selected Timezone</label>
+                            <div class="form-control-plaintext" id="timezonePreview">--:--</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="updateTimezone()">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Save Timezone
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</body>
+</html> 
