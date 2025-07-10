@@ -353,6 +353,32 @@ def get_activities_count(
         print(f"DEBUG: Full traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error counting activities: {str(e)}")
 
+@router.get("/current-activity", response_model=ActivityResponse)
+def get_current_activity(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get the current DOING activity for the authenticated user"""
+    activity = db.query(Activity).join(Task).filter(
+        Task.owner == current_user.id,
+        Activity.status == "DOING"
+    ).first()
+    
+    if not activity:
+        raise HTTPException(status_code=404, detail="No current activity found")
+    
+    # Convert times to user's timezone
+    user_timezone = current_user.timezone or "UTC"
+    # Activities are stored in UTC (naive), so we need to localize them as UTC
+    # and then convert to the selected timezone
+    clock_in_utc = pytz.UTC.localize(activity.clock_in)
+    activity.clock_in = clock_in_utc.astimezone(pytz.timezone(user_timezone))
+    if activity.clock_out:
+        clock_out_utc = pytz.UTC.localize(activity.clock_out)
+        activity.clock_out = clock_out_utc.astimezone(pytz.timezone(user_timezone))
+    
+    return activity
+
 @router.get("/{activity_id}", response_model=ActivityResponse)
 def get_activity(
     activity_id: int, 

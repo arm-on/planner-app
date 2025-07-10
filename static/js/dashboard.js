@@ -575,35 +575,34 @@ async function checkCurrentActivity() {
         const apiKey = localStorage.getItem('apiKey');
         if (!apiKey) return;
 
-        const response = await fetch('/activities/', {
+        console.log('checkCurrentActivity: Starting to check for current DOING activity...');
+
+        // Use the new current activity endpoint
+        const response = await fetch('/activities/current-activity', {
             headers: {
                 'X-API-Key': apiKey
             }
         });
 
         if (response.ok) {
-            const allActivities = await response.json();
-            console.log('All activities from server:', allActivities);
-            
-            // Find any activity with DOING status
-            const doingActivity = allActivities.find(activity => activity.status === 'DOING');
-            console.log('Found DOING activity:', doingActivity);
-            
-            if (doingActivity) {
+            const doingActivity = await response.json();
+            console.log('checkCurrentActivity: Found current activity:', doingActivity);
+
+            if (doingActivity && doingActivity.status === 'DOING') {
                 currentActivity = doingActivity;
                 updateCurrentActivityDisplay(true);
                 await enableActivityButtons();
                 startClockInTimer();
-                console.log('Found current activity:', doingActivity);
+                console.log('checkCurrentActivity: Successfully set up current activity:', doingActivity);
             } else {
-                console.log('No current activity found');
+                console.log('checkCurrentActivity: No current activity found');
                 // Clear current activity if it was set before
                 if (currentActivity) {
-                    console.log('Clearing current activity:', currentActivity);
+                    console.log('checkCurrentActivity: Clearing current activity:', currentActivity);
                     currentActivity = null;
                     document.getElementById('currentActivityInfo').innerHTML = `
-                        <p class="mb-1">No active activity</p>
-                        <small>Click "Clock In" to start tracking your work</small>
+                        <p class=\"mb-1\">No active activity</p>
+                        <small>Click \"Clock In\" to start tracking your work</small>
                     `;
                     document.getElementById('currentTime').textContent = '--:--';
                     document.getElementById('startTime').textContent = '--:--';
@@ -612,9 +611,27 @@ async function checkCurrentActivity() {
                 }
                 await enableActivityButtons();
             }
+        } else if (response.status === 404) {
+            console.log('checkCurrentActivity: No current activity found (404)');
+            // Clear current activity if it was set before
+            if (currentActivity) {
+                console.log('checkCurrentActivity: Clearing current activity:', currentActivity);
+                currentActivity = null;
+                document.getElementById('currentActivityInfo').innerHTML = `
+                    <p class=\"mb-1\">No active activity</p>
+                    <small>Click \"Clock In\" to start tracking your work</small>
+                `;
+                document.getElementById('currentTime').textContent = '--:--';
+                document.getElementById('startTime').textContent = '--:--';
+                if (clockInInterval) clearInterval(clockInInterval);
+                setCurrentTime();
+            }
+            await enableActivityButtons();
+        } else {
+            console.error('checkCurrentActivity: Failed to fetch activities:', response.status, response.statusText);
         }
     } catch (error) {
-        console.error('Error checking current activity:', error);
+        console.error('checkCurrentActivity: Error checking current activity:', error);
     }
 }
 
@@ -1183,7 +1200,13 @@ async function startActivity(taskId, status, clockIn, isScheduled = false, clock
 }
 
 function updateCurrentActivityDisplay(isScheduled) {
-    const task = tasksData.find(t => Number(t.id) === Number(currentActivity.task_id));
+    console.log('updateCurrentActivityDisplay called with currentActivity:', currentActivity);
+    console.log('tasksData available:', tasksData);
+    console.log('tasksData length:', tasksData ? tasksData.length : 'undefined');
+    
+    const task = tasksData ? tasksData.find(t => Number(t.id) === Number(currentActivity.task_id)) : null;
+    console.log('Found task for activity:', task);
+    
     const startTime = new Date(currentActivity.clock_in).toLocaleTimeString('en-US', {
         hour12: false,
         hour: '2-digit',
@@ -1191,8 +1214,11 @@ function updateCurrentActivityDisplay(isScheduled) {
         timeZone: userTimezone || 'Asia/Tehran'
     });
 
+    const taskTitle = task ? task.title : `Task ID ${currentActivity.task_id}`;
+    console.log('Using task title:', taskTitle);
+
     document.getElementById('currentActivityInfo').innerHTML = `
-        <h6 class="mb-1">${task ? task.title : 'Unknown Task'}</h6>
+        <h6 class="mb-1">${taskTitle}</h6>
         <p class="mb-1">You're doing this activity since ${startTime}</p>
         <span class="badge ${isScheduled ? 'bg-success' : 'bg-warning'}">
             ${isScheduled ? 'On Schedule' : 'Off Schedule'}
