@@ -8,6 +8,7 @@ from models.user import User
 from models.keys import Key
 from models.projects import Project
 from models.progress import Progress
+from models.activity import Activity
 from schemas.tasks import TaskCreate, TaskUpdate, TaskResponse, ENERGY_LEVEL_MAP, TASK_STATE_MAP
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -222,7 +223,7 @@ def delete_task(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Mark a task as deleted (only if owned by authenticated user)"""
+    """Delete a task and all associated data (only if owned by authenticated user)"""
     db_task = db.query(Task).filter(
         Task.id == task_id,
         Task.owner == current_user.id
@@ -230,11 +231,28 @@ def delete_task(
     if db_task is None:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    # Set the state to 'deleted' instead of deleting
-    db_task.state = 'deleted'
-    db.commit()
-    db.refresh(db_task)
-    return {"message": "Task marked as deleted"}
+    try:
+        # Delete all activities associated with this task
+        activities = db.query(Activity).filter(Activity.task_id == task_id).all()
+        for activity in activities:
+            db.delete(activity)
+        
+        # Get the progress record before deleting the task
+        progress_id = db_task.progress_id
+        
+        # Delete the task
+        db.delete(db_task)
+        
+        # Delete the associated progress record
+        progress = db.query(Progress).filter(Progress.id == progress_id).first()
+        if progress:
+            db.delete(progress)
+        
+        db.commit()
+        return {"message": "Task and all associated data deleted successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to delete task: {str(e)}")
 
 @router.get("/project/{project_id}", response_model=List[TaskResponse])
 def get_tasks_by_project(

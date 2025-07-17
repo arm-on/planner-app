@@ -1491,7 +1491,7 @@ function populateTaskSelect() {
         console.log('Populating task select with', tasksData.length, 'tasks');
         
         // Filter out tasks that are done, closed, or deleted
-        const availableTasks = tasksData.filter(task => task.state !== 'done' && task.state !== 'closed' && task.state !== 'deleted');
+        const availableTasks = tasksData.filter(task => task.state !== 'done' && task.state !== 'closed');
         
         console.log('Available tasks for activity creation:', availableTasks.length, 'out of', tasksData.length, 'total tasks');
         
@@ -2571,7 +2571,7 @@ function populateEditTaskSelect() {
         if (currentTaskId && Number(task.id) === Number(currentTaskId)) {
             return true;
         }
-        return task.state !== 'done' && task.state !== 'closed' && task.state !== 'deleted';
+        return task.state !== 'done' && task.state !== 'closed';
     });
     
     console.log('Available tasks for activity editing:', availableTasks.length, 'out of', tasksData.length, 'total tasks');
@@ -2836,8 +2836,7 @@ document.getElementById('taskProject').addEventListener('change', function() {
         const projectTasks = tasksData.filter(task => 
             Number(task.proj_id) === Number(selectedProjectId) && 
             task.state !== 'done' && 
-            task.state !== 'closed' &&
-            task.state !== 'deleted'
+            task.state !== 'closed'
         );
         
         // Add available parent tasks
@@ -4132,8 +4131,7 @@ function populateEditActivityTasks() {
     const projectTasks = tasksData.filter(task => 
         String(task.proj_id) === String(selectedProjectId) && 
         task.state !== 'done' && 
-        task.state !== 'closed' &&
-        task.state !== 'deleted'
+        task.state !== 'closed'
     );
     projectTasks.forEach(task => {
         const option = document.createElement('option');
@@ -4193,12 +4191,11 @@ function populateActivityTasks() {
     }
     // Enable task select
     taskSelect.disabled = false;
-    // Filter tasks by selected project, excluding done, closed, and deleted
+    // Filter tasks by selected project, excluding done and closed
     const projectTasks = tasksData.filter(task => 
         String(task.proj_id) === String(selectedProjectId) && 
         task.state !== 'done' && 
-        task.state !== 'closed' &&
-        task.state !== 'deleted'
+        task.state !== 'closed'
     );
     projectTasks.forEach(task => {
         const option = document.createElement('option');
@@ -4226,5 +4223,86 @@ function setCurrentDoingActivityFromSchedule() {
     document.getElementById('currentActivityInfo').innerHTML = `<p class="mb-1">No active activity</p><small>Click \"Clock In\" to start tracking your work</small>`;
     document.getElementById('startTime').textContent = '--:--';
 }
+
+// Delete Task Function
+async function deleteTask(taskId) {
+    // Show confirmation modal
+    const confirmModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    const cancelBtn = document.getElementById('cancelDeleteBtn');
+    const modalBody = document.getElementById('confirmDeleteBody');
+    
+    modalBody.textContent = 'Are you sure you want to delete this task? This action cannot be undone and will also delete all associated activities and progress data.';
+    
+    // Set up confirmation handler
+    const handleConfirm = async () => {
+        confirmModal.hide();
+        await performTaskDeletion(taskId);
+        // Clean up event listeners
+        confirmBtn.removeEventListener('click', handleConfirm);
+        cancelBtn.removeEventListener('click', handleCancel);
+    };
+    
+    const handleCancel = () => {
+        confirmModal.hide();
+        // Clean up event listeners
+        confirmBtn.removeEventListener('click', handleConfirm);
+        cancelBtn.removeEventListener('click', handleCancel);
+    };
+    
+    confirmBtn.addEventListener('click', handleConfirm);
+    cancelBtn.addEventListener('click', handleCancel);
+    
+    confirmModal.show();
+}
+
+// Perform the actual task deletion
+async function performTaskDeletion(taskId) {
+    try {
+        const apiKey = localStorage.getItem('apiKey');
+        if (!apiKey) {
+            showToast('error', 'Error', 'No API key found. Please log in again.');
+            window.location.href = '/login';
+            return;
+        }
+
+        const response = await fetch(`/tasks/${taskId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-API-Key': apiKey
+            }
+        });
+
+        if (response.ok) {
+            // Close the edit task modal
+            const editTaskModal = bootstrap.Modal.getInstance(document.getElementById('editTaskModal'));
+            editTaskModal.hide();
+            
+            showToast('success', 'Success!', 'Task deleted successfully!');
+            await loadAllTasks();
+            // Refresh dashboard data without page reload
+            await refreshDashboardData();
+        } else {
+            const errorData = await response.json();
+            showToast('error', 'Error', `Failed to delete task: ${errorData.detail || 'Unknown error'}`);
+        }
+    } catch (error) {
+        console.error('Error deleting task:', error);
+        showToast('error', 'Error', `Error deleting task: ${error.message}`);
+    }
+}
+
+// Add event listener for delete task button
+document.getElementById('deleteTaskBtn').addEventListener('click', function() {
+    console.log('Delete task button clicked!');
+    const taskId = document.getElementById('editTaskId').value;
+    console.log('Task ID to delete:', taskId);
+    if (taskId) {
+        console.log('Calling deleteTask function...');
+        deleteTask(taskId);
+    } else {
+        console.log('No task ID found!');
+    }
+});
 
 

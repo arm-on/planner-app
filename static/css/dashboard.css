@@ -315,7 +315,7 @@ body {
 
 /* Specific styling for current time display */
 #currentTime {
-    color: #ffffff !important;
+    color: #111111 !important;
     font-size: 2rem;
     font-weight: bold;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);

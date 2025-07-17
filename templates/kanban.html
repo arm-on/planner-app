@@ -179,6 +179,25 @@
                     <i class="bi bi-kanban" style="font-size: 1.5rem; color: #4f8cff; margin-right: 0.5rem;"></i>
                     <h5 class="mb-0" style="font-weight: 700; letter-spacing: 0.5px;">Task Kanban Board</h5>
                 </div>
+                <!-- Quick Add Task/Subtask UI -->
+                <form id="quickAddTaskForm" class="row g-2 align-items-end mb-4">
+                  <div class="col-md-4 col-12">
+                    <input type="text" class="form-control" id="quickTaskTitle" placeholder="Task or subtask title" required>
+                  </div>
+                  <div class="col-md-3 col-6">
+                    <select class="form-select" id="quickTaskProject" required>
+                      <option value="">Project</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3 col-6">
+                    <select class="form-select" id="quickTaskParent">
+                      <option value="">No parent (make task)</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2 col-12">
+                    <button type="submit" class="btn btn-success w-100"><i class="bi bi-plus-circle me-1"></i>Add</button>
+                  </div>
+                </form>
                 <div id="kanbanBoard" class="kanban-board"></div>
             </div>
         </div>
@@ -271,8 +290,20 @@ async function fetchTasks() {
     }
 }
 
+// Populate quick add selects after projects/tasks are loaded
+function populateQuickAddSelects() {
+    const projSel = document.getElementById('quickTaskProject');
+    const parentSel = document.getElementById('quickTaskParent');
+    if (!projSel || !parentSel) return;
+    // Projects
+    projSel.innerHTML = '<option value="">Project</option>' + projectsData.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+            // Parent tasks (only top-level, not closed)
+        parentSel.innerHTML = '<option value="">No parent (make task)</option>' + tasksData.filter(t => !t.parent_task_id && t.state !== 'closed').map(t => `<option value="${t.id}">${t.title}</option>`).join('');
+}
+// Call after loading data
 async function fetchTasksAndProjects() {
     await Promise.all([fetchTasks(), fetchProjects()]);
+    populateQuickAddSelects();
     renderKanban();
 }
 
@@ -616,7 +647,98 @@ async function manualLogActivity(taskId, clockIn, clockOut) {
     });
 }
 
-document.addEventListener('DOMContentLoaded', fetchTasksAndProjects);
+// Update parent task dropdown when project changes
+function updateParentTaskDropdown() {
+    const projId = document.getElementById('quickTaskProject').value;
+    const parentSelect = document.getElementById('quickTaskParent');
+    parentSelect.innerHTML = '<option value="">(No parent - top-level task)</option>';
+    if (!projId) return;
+    // Only show parent tasks for this project that are not closed
+    const parentTasks = tasksData.filter(t => t.proj_id == projId && !t.parent_task_id && t.state !== 'closed');
+    parentTasks.forEach(task => {
+        const opt = document.createElement('option');
+        opt.value = task.id;
+        opt.textContent = task.title;
+        parentSelect.appendChild(opt);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    fetchTasksAndProjects();
+    const quickAddForm = document.getElementById('quickAddTaskForm');
+    if (quickAddForm) {
+        quickAddForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const title = document.getElementById('quickTaskTitle').value.trim();
+            const projId = document.getElementById('quickTaskProject').value;
+            const parentId = document.getElementById('quickTaskParent').value;
+            if (!title || !projId) return;
+            const apiKey = localStorage.getItem('apiKey');
+            // 1. Create default progress
+            const progressData = {
+                unit: 'tasks',
+                value: 0,
+                max_value: 1
+            };
+            let createdProgress = null;
+            try {
+                const progressResp = await fetch('/progress/', {
+                    method: 'POST',
+                    headers: { 'X-API-Key': apiKey, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(progressData)
+                });
+                if (!progressResp.ok) {
+                    const err = await progressResp.text();
+                    alert('Failed to create progress. ' + err);
+                    console.error('Failed to create progress:', err);
+                    return;
+                }
+                createdProgress = await progressResp.json();
+            } catch (err) {
+                alert('Error creating progress.');
+                console.error('Error creating progress:', err);
+                return;
+            }
+            // 2. Create the task
+            const body = {
+                title,
+                proj_id: projId,
+                state: 'open',
+                is_important: false,
+                is_urgent: false,
+                energy_level: 'MEDIUM',
+                progress_id: createdProgress.id
+            };
+            if (parentId) body.parent_task_id = parentId;
+            try {
+                const resp = await fetch('/tasks/', {
+                    method: 'POST',
+                    headers: { 'X-API-Key': apiKey, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (resp.ok) {
+                    document.getElementById('quickTaskTitle').value = '';
+                    document.getElementById('quickTaskProject').value = '';
+                    document.getElementById('quickTaskParent').value = '';
+                    await fetchTasksAndProjects();
+                } else {
+                    const err = await resp.text();
+                    alert('Failed to add task. ' + err);
+                    console.error('Failed to add task:', err);
+                }
+            } catch (err) {
+                alert('Error adding task.');
+                console.error('Error adding task:', err);
+            }
+        });
+    }
+    const projectSelect = document.getElementById('quickTaskProject');
+    if (projectSelect) {
+        projectSelect.addEventListener('change', updateParentTaskDropdown);
+    }
+    // Also update parent dropdown on initial load
+    updateParentTaskDropdown();
+});
     </script>
 </body>
 </html> 
