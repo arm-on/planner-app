@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Header
+from fastapi import APIRouter, HTTPException, Depends, Header, Query
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from datetime import datetime
@@ -222,42 +222,26 @@ def delete_task(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Delete a task (only if owned by authenticated user)"""
+    """Mark a task as deleted (only if owned by authenticated user)"""
     db_task = db.query(Task).filter(
         Task.id == task_id,
         Task.owner == current_user.id
     ).first()
     if db_task is None:
         raise HTTPException(status_code=404, detail="Task not found")
-    
-    try:
-        # Delete all activities associated with this task
-        from models.activity import Activity
-        activities = db.query(Activity).filter(Activity.task_id == task_id).all()
-        for activity in activities:
-            db.delete(activity)
-        
-        # Delete all subtasks (tasks that have this task as parent)
-        subtasks = db.query(Task).filter(Task.parent_task_id == task_id).all()
-        for subtask in subtasks:
-            # Recursively delete activities for subtasks
-            subtask_activities = db.query(Activity).filter(Activity.task_id == subtask.id).all()
-            for activity in subtask_activities:
-                db.delete(activity)
-            db.delete(subtask)
-        
-        # Delete the main task
-        db.delete(db_task)
-        db.commit()
-        
-        return {"message": "Task and all associated activities and subtasks deleted successfully"}
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to delete task: {str(e)}")
+
+    # Set the state to 'deleted' instead of deleting
+    db_task.state = 'deleted'
+    db.commit()
+    db.refresh(db_task)
+    return {"message": "Task marked as deleted"}
 
 @router.get("/project/{project_id}", response_model=List[TaskResponse])
 def get_tasks_by_project(
     project_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    all: bool = Query(False, description="If true, return all tasks for the project regardless of pagination or state."),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -269,11 +253,15 @@ def get_tasks_by_project(
     ).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    
-    tasks = db.query(Task).options(
+    query = db.query(Task).options(
         joinedload(Task.progress)
     ).filter(
         Task.proj_id == project_id,
         Task.owner == current_user.id
-    ).all()
+    )
+    if not all:
+        query = query.filter(Task.state.notin_(["done", "closed"]))
+        tasks = query.offset(skip).limit(limit).all()
+    else:
+        tasks = query.all()
     return tasks

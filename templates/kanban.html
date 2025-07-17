@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <title>Kanban Board - Planner App</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background: #f4f6fa; }
+        .kanban-board {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding-bottom: 1rem;
+        }
+        .kanban-column {
+            flex: 1 1 360px;
+            min-width: 360px;
+            max-width: 100%;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        @media (max-width: 991px) {
+            .kanban-board {
+                gap: 1rem;
+            }
+            .kanban-column {
+                min-width: 280px;
+                padding: 0.7rem;
+            }
+        }
+        @media (max-width: 767px) {
+            .kanban-board {
+                gap: 0.7rem;
+            }
+            .kanban-column {
+                min-width: 180px;
+                padding: 0.5rem;
+                font-size: 0.97em;
+            }
+        }
+        .kanban-column-header { font-weight: bold; margin-bottom: 1rem; text-align: center; letter-spacing: 0.5px; font-size: 1.1rem; }
+        .kanban-task { background: #fff; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); padding: 0.75rem; margin-bottom: 1rem; cursor: grab; border: 1px solid #e0e0e0; transition: box-shadow 0.2s; }
+        .kanban-task.dragging { opacity: 0.5; }
+        .kanban-column.drag-over { background: #e3f2fd; }
+        .dashboard-header { background: #fff; border-bottom: 1px solid #e0e0e0; }
+        .header-logo { font-size: 2.2rem; color: #4f8cff; }
+        .header-title { font-weight: 700; letter-spacing: 0.5px; }
+        .header-subtitle { font-size: 0.95rem; }
+        .header-nav .nav-btn {
+            background: none;
+            border: none;
+            color: #4f8cff;
+            font-weight: 500;
+            margin-left: 1rem;
+            display: inline-flex;
+            align-items: center;
+            text-decoration: none;
+            text-underline-offset: 0;
+        }
+        .header-nav .nav-btn .btn-text { margin-left: 0.4em; }
+        .header-nav .nav-btn:hover {
+            color: #0056b3;
+            text-decoration: none;
+        }
+        .welcome-message-row { background: #e3f0ff; border-radius: 8px; padding: 0.7rem 1.2rem; margin-bottom: 1.2rem; display: flex; align-items: center; }
+        .welcome-icon { font-size: 1.7rem; color: #4f8cff; margin-right: 0.7rem; }
+        .welcome-greeting { font-weight: 500; }
+        .user-name { font-weight: 700; color: #4f8cff; }
+        .kanban-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); padding: 2rem 1.5rem; }
+        .kanban-project-box {
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            padding: 1.5rem 1rem;
+            margin-right: 1.5rem;
+            min-width: 340px;
+            max-width: 100%;
+            display: inline-block;
+            vertical-align: top;
+        }
+        .kanban-project-group {
+            background: #fdfdff;
+            border: 1.5px solid #e3e7f0;
+            border-radius: 10px;
+            margin-bottom: 1.2rem;
+            box-shadow: 0 1px 4px rgba(79,140,255,0.04);
+            padding: 0.7rem 0.8rem 0.5rem 0.8rem;
+            position: relative;
+        }
+        .kanban-project-header {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            font-size: 1.04rem;
+            margin-bottom: 0.5rem;
+            color: #3a4a6b;
+            letter-spacing: 0.2px;
+        }
+        .kanban-project-dot {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 1.5px #e3e7f0;
+        }
+        .kanban-project-divider {
+            border-top: 1px dashed #d0d7e6;
+            margin: 0.7rem 0 0.7rem 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="dashboard-header mb-3">
+        <div class="container">
+            <div class="row align-items-center py-4">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <div class="header-logo me-3">
+                            <i class="bi bi-calendar3"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-0 header-title">Kanban Board</h4>
+                            <small class="text-muted header-subtitle">Visualize and manage your tasks</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="header-nav text-end">
+                        <a href="/dashboard" class="nav-btn" title="Dashboard">
+                            <i class="bi bi-house"></i>
+                            <span class="btn-text">Dashboard</span>
+                        </a>
+                        <a href="/reports" class="nav-btn" title="Reports">
+                            <i class="bi bi-graph-up"></i>
+                            <span class="btn-text">Reports</span>
+                        </a>
+                        <a href="/assistant" class="nav-btn" title="AI Assistant">
+                            <i class="bi bi-robot"></i>
+                            <span class="btn-text">Assistant</span>
+                        </a>
+                        <button class="nav-btn" onclick="logout()" title="Logout">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span class="btn-text">Logout</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <div class="welcome-message-row">
+                        <div class="welcome-icon">
+                            <i class="bi bi-person-circle"></i>
+                        </div>
+                        <div class="welcome-text">
+                            <span class="welcome-greeting">Welcome back, </span>
+                            <span class="user-name" id="userName"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <div class="main-content">
+        <div class="container">
+            <div class="kanban-card">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-kanban" style="font-size: 1.5rem; color: #4f8cff; margin-right: 0.5rem;"></i>
+                    <h5 class="mb-0" style="font-weight: 700; letter-spacing: 0.5px;">Task Kanban Board</h5>
+                </div>
+                <div id="kanbanBoard" class="kanban-board"></div>
+            </div>
+        </div>
+    </div>
+    <!-- Add modal for subtasks -->
+    <div class="modal fade" id="subtasksModal" tabindex="-1" aria-labelledby="subtasksModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="subtasksModalLabel">Subtasks</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div id="subtasksList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Activity Sidebar (Offcanvas) -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="activitySidebar" aria-labelledby="activitySidebarLabel">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="activitySidebarLabel">Task Activity</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        <div id="activitySidebarContent">
+          <!-- Content will be loaded dynamically -->
+        </div>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+// Dummy user name fetch for welcome message
+(function() {
+    const apiKey = localStorage.getItem('apiKey');
+    if (!apiKey) return;
+    fetch('/users/me', { headers: { 'X-API-Key': apiKey } })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (data && data.display_name) {
+                document.getElementById('userName').textContent = data.display_name;
+            }
+        });
+})();
+
+function logout() {
+    localStorage.removeItem('apiKey');
+    window.location.href = '/login';
+}
+
+const TASK_STATES = [
+    { key: 'open', label: 'Open' },
+    { key: 'todo', label: 'To Do' },
+    { key: 'doing', label: 'Doing' },
+    { key: 'done', label: 'Done' },
+    { key: 'closed', label: 'Closed' }
+];
+
+let tasksData = [];
+let projectsData = [];
+let draggedTaskId = null;
+
+async function fetchProjects() {
+    const apiKey = localStorage.getItem('apiKey');
+    if (!apiKey) return;
+    const response = await fetch('/projects/?skip=0&limit=10000', {
+        headers: { 'X-API-Key': apiKey }
+    });
+    if (response.ok) {
+        projectsData = await response.json();
+    } else {
+        projectsData = [];
+    }
+}
+
+async function fetchTasks() {
+    const apiKey = localStorage.getItem('apiKey');
+    if (!apiKey) {
+        alert('No API key found. Please log in.');
+        window.location.href = '/login';
+        return;
+    }
+    const response = await fetch('/tasks/?skip=0&limit=10000', {
+        headers: { 'X-API-Key': apiKey }
+    });
+    if (response.ok) {
+        tasksData = await response.json();
+    } else {
+        tasksData = [];
+    }
+}
+
+async function fetchTasksAndProjects() {
+    await Promise.all([fetchTasks(), fetchProjects()]);
+    renderKanban();
+}
+
+function renderKanban() {
+    const board = document.getElementById('kanbanBoard');
+    board.innerHTML = '';
+    if (!tasksData.length) {
+        board.innerHTML = '<div class="text-muted">No tasks found.</div>';
+        return;
+    }
+    TASK_STATES.forEach(state => {
+        const column = document.createElement('div');
+        column.className = 'kanban-column';
+        column.dataset.state = state.key;
+        column.innerHTML = `<div class="kanban-column-header">${state.label}</div>`;
+        column.ondragover = (e) => { e.preventDefault(); column.classList.add('drag-over'); };
+        column.ondragleave = () => { column.classList.remove('drag-over'); };
+        column.ondrop = (e) => { column.classList.remove('drag-over'); onDropTask(state.key); };
+        let firstProject = true;
+        projectsData.forEach(project => {
+            const projectTasks = tasksData.filter(t => t.state === state.key && !t.parent_task_id && String(t.proj_id) === String(project.id));
+            if (projectTasks.length === 0) return;
+            if (!firstProject) {
+                const divider = document.createElement('div');
+                divider.className = 'kanban-project-divider';
+                column.appendChild(divider);
+            }
+            firstProject = false;
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'kanban-project-group';
+            // Project header
+            const projectHeader = document.createElement('div');
+            projectHeader.className = 'kanban-project-header';
+            projectHeader.innerHTML = `<span class="kanban-project-dot" style="background:${project.color};"></span><i class="bi bi-folder2-open me-1"></i>${project.name}`;
+            groupDiv.appendChild(projectHeader);
+            projectTasks.forEach(task => {
+                const taskDiv = document.createElement('div');
+                taskDiv.className = 'kanban-task';
+                taskDiv.draggable = true;
+                taskDiv.dataset.taskId = task.id;
+                taskDiv.innerHTML = `<div class="fw-bold">${task.title}</div><div class="text-muted small">${task.description || ''}</div>`;
+                taskDiv.ondragstart = () => { draggedTaskId = task.id; taskDiv.classList.add('dragging'); };
+                taskDiv.ondragend = () => { draggedTaskId = null; taskDiv.classList.remove('dragging'); };
+                taskDiv.onclick = (e) => {
+                    if (e.target.classList.contains('subtask-icon')) {
+                        showSubtasksModal(task.id, task.title);
+                        return;
+                    }
+                    openActivitySidebar(task.id, task.title);
+                };
+                groupDiv.appendChild(taskDiv);
+            });
+            column.appendChild(groupDiv);
+        });
+        board.appendChild(column);
+    });
+}
+
+async function showSubtasksModal(parentTaskId, parentTitle) {
+    const modalLabel = document.getElementById('subtasksModalLabel');
+    const subtasksList = document.getElementById('subtasksList');
+    modalLabel.textContent = `Subtasks for: ${parentTitle}`;
+    // Find subtasks
+    const subtasks = tasksData.filter(t => t.parent_task_id === parentTaskId);
+    if (subtasks.length === 0) {
+        subtasksList.innerHTML = '<p class="text-muted">No subtasks for this task.</p>';
+    } else {
+        subtasksList.innerHTML = subtasks.map(subtask => {
+            const checked = subtask.state === 'closed' ? 'checked disabled' : '';
+            return `<div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="subtaskCheck${subtask.id}" ${checked} onchange="closeSubtask(${subtask.id})">
+                <label class="form-check-label" for="subtaskCheck${subtask.id}">${subtask.title}</label>
+            </div>`;
+        }).join('');
+    }
+    const modal = new bootstrap.Modal(document.getElementById('subtasksModal'));
+    modal.show();
+}
+
+async function closeSubtask(subtaskId) {
+    const apiKey = localStorage.getItem('apiKey');
+    const checkbox = document.getElementById(`subtaskCheck${subtaskId}`);
+    if (!apiKey || !checkbox) return;
+    checkbox.disabled = true;
+    const response = await fetch(`/tasks/${subtaskId}`, {
+        method: 'PUT',
+        headers: {
+            'X-API-Key': apiKey,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ state: 'closed' })
+    });
+    if (response.ok) {
+        checkbox.checked = true;
+        // Update local data and re-render modal
+        const subtask = tasksData.find(t => t.id === subtaskId);
+        if (subtask) subtask.state = 'closed';
+        // Optionally, re-render the modal to update disabled state
+        const parentId = subtask.parent_task_id;
+        const parentTitle = tasksData.find(t => t.id === parentId)?.title || '';
+        showSubtasksModal(parentId, parentTitle);
+    } else {
+        checkbox.disabled = false;
+        alert('Failed to close subtask.');
+    }
+}
+
+async function onDropTask(newState) {
+    if (!draggedTaskId) return;
+    const task = tasksData.find(t => t.id === draggedTaskId);
+    if (!task || task.state === newState) return;
+    // Update state via API
+    const apiKey = localStorage.getItem('apiKey');
+    const response = await fetch(`/tasks/${task.id}`, {
+        method: 'PUT',
+        headers: {
+            'X-API-Key': apiKey,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ state: newState })
+    });
+    if (response.ok) {
+        task.state = newState;
+        renderKanban();
+    } else {
+        alert('Failed to update task state.');
+    }
+}
+
+// Timezone support
+let userTimezone = localStorage.getItem('userTimezone') || 'Asia/Tehran';
+
+// Optionally, fetch from backend for live update
+async function loadUserTimezone() {
+    try {
+        const apiKey = localStorage.getItem('apiKey');
+        if (!apiKey) return;
+        const response = await fetch('/users/timezone', { headers: { 'X-API-Key': apiKey } });
+        if (response.ok) {
+            const data = await response.json();
+            userTimezone = data.timezone;
+        }
+    } catch (e) { console.error('Failed to load user timezone', e); }
+}
+loadUserTimezone();
+
+function formatDateTimeInUserTz(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleString('en-US', { timeZone: userTimezone });
+}
+
+async function openActivitySidebar(taskId, taskTitle) {
+    const sidebar = new bootstrap.Offcanvas(document.getElementById('activitySidebar'));
+    const contentDiv = document.getElementById('activitySidebarContent');
+    contentDiv.innerHTML = `<div class='text-center my-3'><div class='spinner-border text-primary'></div></div>`;
+    document.getElementById('activitySidebarLabel').textContent = `Task: ${taskTitle}`;
+    sidebar.show();
+    // Fetch activities for this task
+    const apiKey = localStorage.getItem('apiKey');
+    let activities = [];
+    try {
+        const resp = await fetch(`/activities/task/${taskId}`, { headers: { 'X-API-Key': apiKey } });
+        if (resp.ok) activities = await resp.json();
+    } catch {}
+    // Calculate total time spent
+    let totalMs = 0;
+    activities.forEach(a => {
+        if (a.clock_in && (a.clock_out || a.status === 'DOING')) {
+            const inTime = new Date(a.clock_in);
+            const outTime = a.clock_out ? new Date(a.clock_out) : (a.status === 'DOING' ? new Date() : null);
+            if (outTime) totalMs += outTime - inTime;
+        }
+    });
+    const totalH = Math.floor(totalMs / 1000 / 60 / 60);
+    const totalM = Math.floor((totalMs / 1000 / 60) % 60);
+    // Find ongoing activity if any
+    const doing = activities.find(a => a.status === 'DOING');
+    // Sidebar content
+    contentDiv.innerHTML = `
+      <div class='mb-3'>
+        <div class='fw-bold mb-1'>Total Time Spent:</div>
+        <div class='fs-5'><i class='bi bi-clock-history me-2'></i>${totalH}h ${totalM}m</div>
+      </div>
+      <div class='mb-3'>
+        <div class='fw-bold mb-1'>Recent Activities:</div>
+        <div style='max-height: 180px; overflow-y: auto;'>
+          ${activities.length === 0 ? '<span class="text-muted">No activities yet.</span>' : activities.slice().reverse().map(a => {
+            const inTime = a.clock_in ? formatDateTimeInUserTz(a.clock_in) : '';
+            const outTime = a.clock_out ? formatDateTimeInUserTz(a.clock_out) : '';
+            return `<div class='border-bottom py-1 small'>
+              <span class='badge bg-${a.status === 'DOING' ? 'success' : a.status === 'DONE' ? 'secondary' : 'info'} me-1'>${a.status}</span>
+              <span>${inTime}</span>
+              ${outTime ? `&rarr; <span>${outTime}</span>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class='mb-2 text-end'><small class='text-muted'>Timezone: ${userTimezone}</small></div>
+      <div class='mb-3'>
+        <button class='btn btn-primary w-100 mb-2' id='startActivityBtn' ${doing ? 'disabled' : ''}><i class='bi bi-play-circle me-1'></i>Start Activity</button>
+        <button class='btn btn-danger w-100' id='clockOutBtn' ${doing ? '' : 'disabled'}><i class='bi bi-stop-circle me-1'></i>Clock Out</button>
+      </div>
+      <div class='mb-2'>
+        <button class='btn btn-outline-secondary w-100' id='manualLogBtn'><i class='bi bi-pencil-square me-1'></i>Manual Log</button>
+      </div>
+      <form id='manualLogForm' style='display:none;'>
+        <div class='mb-2'>
+          <label class='form-label small'>Clock In</label>
+          <input type='datetime-local' class='form-control' id='manualClockIn' required>
+        </div>
+        <div class='mb-2'>
+          <label class='form-label small'>Clock Out</label>
+          <input type='datetime-local' class='form-control' id='manualClockOut' required>
+        </div>
+        <button type='submit' class='btn btn-success w-100'>Log Activity</button>
+      </form>
+    `;
+    // Button handlers
+    document.getElementById('startActivityBtn').onclick = async function() {
+      await startActivityForTask(taskId);
+      openActivitySidebar(taskId, taskTitle);
+    };
+    document.getElementById('clockOutBtn').onclick = async function() {
+      if (doing) await clockOutActivity(doing.id);
+      openActivitySidebar(taskId, taskTitle);
+    };
+    document.getElementById('manualLogBtn').onclick = function() {
+      document.getElementById('manualLogForm').style.display = 'block';
+      this.style.display = 'none';
+    };
+    document.getElementById('manualLogForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const clockIn = document.getElementById('manualClockIn').value;
+      const clockOut = document.getElementById('manualClockOut').value;
+      if (!clockIn || !clockOut) return;
+      await manualLogActivity(taskId, clockIn, clockOut);
+      openActivitySidebar(taskId, taskTitle);
+    };
+}
+
+// Convert datetime-local input (in user timezone) to UTC ISO string
+function localDateTimeToUTCISOString(localDateTimeStr) {
+    if (!localDateTimeStr) return null;
+    // localDateTimeStr is 'YYYY-MM-DDTHH:mm' in user's timezone
+    // Create a Date object as if the input is in userTimezone
+    // Use Date.parse with offset if needed, or use luxon/moment for full support
+    // Here, we use a workaround: parse as local, then get the equivalent UTC
+    const [date, time] = localDateTimeStr.split('T');
+    if (!date || !time) return null;
+    // Create a date string in ISO format with userTimezone offset
+    // Use Intl to get the offset
+    const dt = new Date(`${date}T${time}:00`);
+    // Get the time in the user's timezone
+    const tzDate = new Date(dt.toLocaleString('en-US', { timeZone: userTimezone }));
+    // Now, get the UTC time corresponding to that local time
+    const utcTimestamp = Date.UTC(
+        tzDate.getFullYear(), tzDate.getMonth(), tzDate.getDate(),
+        tzDate.getHours(), tzDate.getMinutes(), tzDate.getSeconds()
+    );
+    return new Date(utcTimestamp).toISOString();
+}
+
+async function startActivityForTask(taskId) {
+    const apiKey = localStorage.getItem('apiKey');
+    // Use current time in user's timezone
+    const now = new Date();
+    const tzNow = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
+    // Update task state to 'doing'
+    await fetch(`/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: { 'X-API-Key': apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state: 'doing' })
+    });
+    // Update local tasksData and re-render
+    const task = tasksData.find(t => t.id === taskId);
+    if (task) task.state = 'doing';
+    renderKanban();
+    // Start activity
+    await fetch('/activities/', {
+        method: 'POST',
+        headers: { 'X-API-Key': apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task_id: taskId, status: 'DOING', clock_in: tzNow.toISOString() })
+    });
+}
+
+async function clockOutActivity(activityId) {
+    const apiKey = localStorage.getItem('apiKey');
+    // Use current time in user's timezone
+    const now = new Date();
+    const tzNow = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
+    // Get the activity to find the task id
+    let activity = null;
+    try {
+        const resp = await fetch(`/activities/${activityId}`, { headers: { 'X-API-Key': apiKey } });
+        if (resp.ok) activity = await resp.json();
+    } catch {}
+    // Update task state to 'done'
+    if (activity && activity.task_id) {
+        await fetch(`/tasks/${activity.task_id}`, {
+            method: 'PUT',
+            headers: { 'X-API-Key': apiKey, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ state: 'done' })
+        });
+        // Update local tasksData and re-render
+        const task = tasksData.find(t => t.id === activity.task_id);
+        if (task) task.state = 'done';
+        renderKanban();
+    }
+    // Clock out activity
+    await fetch(`/activities/${activityId}`, {
+        method: 'PUT',
+        headers: { 'X-API-Key': apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'DONE', clock_out: tzNow.toISOString() })
+    });
+}
+
+async function manualLogActivity(taskId, clockIn, clockOut) {
+    const apiKey = localStorage.getItem('apiKey');
+    await fetch('/activities/', {
+        method: 'POST',
+        headers: { 'X-API-Key': apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            task_id: taskId,
+            status: 'DONE',
+            clock_in: localDateTimeToUTCISOString(clockIn),
+            clock_out: localDateTimeToUTCISOString(clockOut)
+        })
+    });
+}
+
+document.addEventListener('DOMContentLoaded', fetchTasksAndProjects);
+    </script>
+</body>
+</html> 

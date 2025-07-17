@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import pytz
 
 from core.database import get_db
@@ -92,6 +92,45 @@ def get_today_reminders(
         print(f"DEBUG: Reminder {reminder.id}: when type={type(reminder.when)}")
         print(f"DEBUG: Reminder {reminder.id}: when tzinfo={reminder.when.tzinfo}")
     
+    return reminders
+
+@router.get("/date-range", response_model=List[ReminderResponse])
+def get_reminders_by_date_range(
+    start_date: str,  # YYYY-MM-DD
+    end_date: str,    # YYYY-MM-DD
+    timezone: str = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get reminders for the current user within a date range (inclusive, in user's timezone)"""
+    import pytz
+    from datetime import datetime, timedelta
+    print(f"[REMINDERS] /date-range called with start_date={start_date}, end_date={end_date}, timezone={timezone}")
+    user_timezone = timezone or current_user.timezone or "UTC"
+    print(f"[REMINDERS] Using timezone: {user_timezone}")
+    tz = pytz.timezone(user_timezone)
+    # Parse start and end dates in user's timezone
+    try:
+        start_dt = tz.localize(datetime.strptime(start_date, "%Y-%m-%d"))
+        end_dt = tz.localize(datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)) - timedelta(microseconds=1)
+        print(f"[REMINDERS] Parsed start_dt: {start_dt}, end_dt: {end_dt}")
+    except Exception as e:
+        print(f"[REMINDERS] Date parsing error: {e}")
+        raise HTTPException(status_code=400, detail=f"Invalid date format: {e}")
+    # Convert to UTC for DB query
+    start_dt_utc = start_dt.astimezone(pytz.UTC)
+    end_dt_utc = end_dt.astimezone(pytz.UTC)
+    print(f"[REMINDERS] UTC range: {start_dt_utc} to {end_dt_utc}")
+    # Convert to naive datetimes for SQLite
+    naive_utc_start = start_dt_utc.replace(tzinfo=None)
+    naive_utc_end = end_dt_utc.replace(tzinfo=None)
+    print(f"[REMINDERS] Naive UTC range: {naive_utc_start} to {naive_utc_end}")
+    reminders = db.query(Reminder).filter(
+        Reminder.owner_id == current_user.id,
+        Reminder.when >= naive_utc_start,
+        Reminder.when <= naive_utc_end
+    ).order_by(Reminder.when).all()
+    print(f"[REMINDERS] Found {len(reminders)} reminders in range.")
     return reminders
 
 @router.get("/{reminder_id}", response_model=ReminderResponse)

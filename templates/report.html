@@ -9,7 +9,7 @@
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.3.0/chart.umd.min.js"></script>
     <style>
         body {
             background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
@@ -336,6 +336,10 @@
                                 <i class="bi bi-robot"></i>
                                 <span class="btn-text">Assistant</span>
                             </a>
+                            <a href="/kanban" class="nav-btn kanban-btn" title="Kanban Board">
+                                <i class="bi bi-columns-gap"></i>
+                                <span class="btn-text">Kanban</span>
+                            </a>
                             <button class="nav-btn timezone-btn" onclick="openTimezoneSettings()" title="Change Timezone">
                                 <i class="bi bi-gear"></i>
                                 <span class="btn-text">Timezone</span>
@@ -519,6 +523,7 @@
                                             <th>Start Time</th>
                                             <th>End Time</th>
                                             <th>Duration</th>
+                                            <th>Description</th>
                                             <th>Status</th>
                                         </tr>
                                     </thead>
@@ -980,12 +985,24 @@
                 // Use new fields from API
                 const projectName = activity.project_name || `Project ${activity.project_id}`;
                 const taskName = activity.task_name || `Task ${activity.task_id}`;
+                let descDir = 'ltr';
+                let descAlign = 'left';
+                const desc = activity.description || '';
+                if (desc.length > 0) {
+                  const firstChar = desc.trim().charAt(0);
+                  if (/^[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(firstChar)) {
+                    descDir = 'rtl'; descAlign = 'right';
+                  } else if (/^[A-Za-z]/.test(firstChar)) {
+                    descDir = 'ltr'; descAlign = 'left';
+                  }
+                }
                 row.innerHTML = `
                     <td>${taskName}</td>
                     <td>${projectName}</td>
                     <td>${startTime}</td>
                     <td>${endTime}</td>
                     <td>${duration}</td>
+                    <td style="direction:${descDir};text-align:${descAlign}">${desc}</td>
                     <td><span class="badge bg-${activity.status === 'DONE' ? 'success' : 'warning'}">${activity.status}</span></td>
                 `;
                 tableBody.appendChild(row);

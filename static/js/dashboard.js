@@ -40,7 +40,73 @@ let activityFilters = {
     endDate: ''
 };
 
+let projectsCurrentPage = 0;
+let projectsPageSize = 20;
+let modelsCurrentPage = 0;
+let modelsPageSize = 20;
 
+// Caches for tasks and projects by ID
+let taskCache = {};
+let projectCache = {};
+
+let userTimezone = localStorage.getItem('userTimezone') || 'Asia/Tehran';
+
+let availableTimezones = {};
+let selectedCountry = '';
+let selectedCity = '';
+let selectedTimezoneValue = '';
+let currentCalendarDate = new Date();
+
+async function fetchAndCacheTask(taskId) {
+    if (taskCache[taskId]) return taskCache[taskId];
+    try {
+        const apiKey = localStorage.getItem('apiKey');
+        const response = await fetch(`/tasks/${taskId}`, {
+            headers: { 'X-API-Key': apiKey }
+        });
+        if (response.ok) {
+            const task = await response.json();
+            taskCache[taskId] = task;
+            return task;
+        }
+    } catch (e) { console.error('Failed to fetch task', taskId, e); }
+    return null;
+}
+
+async function fetchAndCacheProject(projectId) {
+    if (projectCache[projectId]) return projectCache[projectId];
+    try {
+        const apiKey = localStorage.getItem('apiKey');
+        const response = await fetch(`/projects/${projectId}`, {
+            headers: { 'X-API-Key': apiKey }
+        });
+        if (response.ok) {
+            const project = await response.json();
+            projectCache[projectId] = project;
+            return project;
+        }
+    } catch (e) { console.error('Failed to fetch project', projectId, e); }
+    return null;
+}
+
+async function ensureTasksAndProjectsForActivities(activities) {
+    const missingTaskIds = new Set();
+    const missingProjectIds = new Set();
+    activities.forEach(a => {
+        if (a.task_id && !taskCache[a.task_id]) missingTaskIds.add(a.task_id);
+        if (a.project_id && !projectCache[a.project_id]) missingProjectIds.add(a.project_id);
+    });
+    await Promise.all(Array.from(missingTaskIds).map(fetchAndCacheTask));
+    await Promise.all(Array.from(missingProjectIds).map(fetchAndCacheProject));
+}
+
+async function ensureTasksForReminders(reminders) {
+    const missingTaskIds = new Set();
+    reminders.forEach(r => {
+        if (r.task_id && !taskCache[r.task_id]) missingTaskIds.add(r.task_id);
+    });
+    await Promise.all(Array.from(missingTaskIds).map(fetchAndCacheTask));
+}
 
 // Toast notification function
 function showToast(type, title, message, duration = 5000) {
@@ -111,27 +177,24 @@ document.addEventListener('DOMContentLoaded', function() {
         loadUserInfo();
     }, 100);
     
-    // Load data sequentially to avoid race conditions
-    loadTasks().then(() => {
-        console.log('Tasks loaded, now loading projects...');
-        return loadProjects();
+    // Load all tasks and projects first
+    loadAllTasks().then(() => {
+        return loadAllProjects();
     }).then(() => {
-        console.log('Projects loaded, now loading models...');
         return loadModels();
     }).then(async () => {
-        console.log('Models loaded, now loading timezone...');
         await loadUserTimezone();
-        console.log('Timezone loaded, now loading schedule...');
-        return loadTodaySchedule();
+        // Set filter to today by default
+        const userTz = userTimezone || 'Asia/Tehran';
+        const now = new Date();
+        const today = now.toLocaleDateString('en-CA', { timeZone: userTz });
+        currentFilter = 'date-range';
+        currentFilterParams = { start_date: today, end_date: today };
+        await loadActivitiesWithPagination();
     }).then(async () => {
-        console.log('Schedule loaded, now checking current activity...');
-        await checkCurrentActivity();
+        await checkForPlannedActivities();
     }).then(async () => {
-        console.log('Dashboard initialization complete!');
-        // Final check for button states
         await enableActivityButtons();
-        // Populate activity form selects
-        populateActivityProjectSelect();
         populateEditActivityProjectSelect();
     }).catch(error => {
         console.error('Error during dashboard initialization:', error);
@@ -163,6 +226,19 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         console.error('editReminderForm not found!');
     }
+
+    // Accessibility fix: blur focus when editActivityModal is hidden
+    const editActivityModal = document.getElementById('editActivityModal');
+    if (editActivityModal) {
+        editActivityModal.addEventListener('hidden.bs.modal', function() {
+            if (document.activeElement && this.contains(document.activeElement)) {
+                document.activeElement.blur();
+            }
+        });
+    }
+
+    initializeCalendar();
+    loadReminders();
 });
 
 // Setup modal handlers to prevent scrolling issues
@@ -263,7 +339,8 @@ function loadUserInfo() {
     }
 }
 
-async function loadTasks(projectId = null) {
+// Fetch all tasks (no pagination)
+async function loadAllTasks() {
     try {
         const apiKey = localStorage.getItem('apiKey');
         if (!apiKey) {
@@ -271,425 +348,56 @@ async function loadTasks(projectId = null) {
             window.location.href = '/login';
             return;
         }
-
-        console.log('Loading tasks with API key:', apiKey);
-
-        let url = '/tasks/';
-        if (projectId) {
-            url = `/tasks/project/${projectId}`;
-        }
-
-        const response = await fetch(url, {
-            headers: {
-                'X-API-Key': apiKey
-            }
+        const response = await fetch('/tasks/?skip=0&limit=10000', {
+            headers: { 'X-API-Key': apiKey }
         });
-
-        console.log('Tasks response status:', response.status);
-
         if (response.ok) {
             tasksData = await response.json();
-            console.log('Loaded tasks:', tasksData);
-            console.log('Task IDs and types:', tasksData.map(t => ({id: t.id, type: typeof t.id, title: t.title})));
-            
-            // Reset pagination
-            tasksCurrentPage = 0;
-            
-            // Populate filters if projects are loaded (only on initial load)
-            if (projectsData.length > 0 && !projectId) {
-                populateTaskFilters();
-            } else if (projectId) {
-                // When loading tasks for a specific project, only update parent task filter
-                populateParentTaskFilter();
-            }
-            
+            // Update taskCache with all tasks
+            tasksData.forEach(task => { taskCache[task.id] = task; });
             populateTaskSelect();
-        } else {
-            // Only read the body once
-            let errorMessage = 'Unknown error';
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                try {
-                    const errorData = await response.json();
-                    errorMessage = errorData.detail || 'Unknown error';
-                } catch (parseError) {
-                    errorMessage = `Server error (${response.status}): Unable to parse JSON error`;
-                }
-            } else {
-                try {
-                    const textResponse = await response.text();
-                    errorMessage = `Server error (${response.status}): ${textResponse.substring(0, 100)}`;
-                } catch (textError) {
-                    errorMessage = `Server error (${response.status}): Unable to read error response`;
-                }
-            }
-            console.error('Error loading tasks:', errorMessage);
-            showToast('error', 'Error', `Failed to load tasks: ${errorMessage}`);
+            populateParentTaskFilter();
         }
     } catch (error) {
-        console.error('Error loading tasks:', error);
-        showToast('error', 'Error', `Error loading tasks: ${error.message}`);
+        console.error('Error loading all tasks:', error);
     }
 }
 
-function populateTaskSelect() {
-    const select = document.getElementById('activityTask');
-    select.innerHTML = '<option value="">Choose a task...</option>';
-    
-    console.log('Populating task select with', tasksData.length, 'tasks');
-    
-    // Filter out tasks that are done or closed
-    const availableTasks = tasksData.filter(task => task.state !== 'done' && task.state !== 'closed');
-    
-    console.log('Available tasks for activity creation:', availableTasks.length, 'out of', tasksData.length, 'total tasks');
-    
-    availableTasks.forEach(task => {
-        const option = document.createElement('option');
-        option.value = task.id;
-        option.textContent = task.title;
-        select.appendChild(option);
-        console.log('Added task option:', task.id, task.title, '(state:', task.state, ')');
-    });
-    
-    // Also populate the activity task filter
-    populateActivityTaskFilter();
-    
-    // Also populate parent task selects
-    populateParentTaskSelects();
-}
-
-function populateActivityProjectSelect() {
-    const select = document.getElementById('activityProject');
-    if (!select) return;
-    
-    select.innerHTML = '<option value="">Choose a project...</option>';
-    
-    console.log('Populating activity project select with', projectsData.length, 'projects');
-    
-    projectsData.forEach(project => {
-        const option = document.createElement('option');
-        option.value = project.id;
-        option.textContent = project.name;
-        select.appendChild(option);
-        console.log('Added project option:', project.id, project.name);
-    });
-}
-
-function populateActivityTasks() {
-    const projectSelect = document.getElementById('activityProject');
-    const taskSelect = document.getElementById('activityTask');
-    
-    if (!projectSelect || !taskSelect) return;
-    
-    const selectedProjectId = projectSelect.value;
-    
-    // Reset task select
-    taskSelect.innerHTML = '<option value="">Choose a task...</option>';
-    taskSelect.disabled = true;
-    
-    if (!selectedProjectId) {
-        return;
-    }
-    
-    // Enable task select
-    taskSelect.disabled = false;
-    
-    // Filter tasks by selected project
-    const projectTasks = tasksData.filter(task => 
-        task.proj_id == selectedProjectId && 
-        task.state !== 'done' && 
-        task.state !== 'closed'
-    );
-    
-    console.log('Found', projectTasks.length, 'tasks for project', selectedProjectId);
-    
-    projectTasks.forEach(task => {
-        const option = document.createElement('option');
-        option.value = task.id;
-        option.textContent = task.title;
-        taskSelect.appendChild(option);
-        console.log('Added task option for project:', task.id, task.title);
-    });
-}
-
-function populateEditActivityProjectSelect() {
-    const select = document.getElementById('editActivityProject');
-    if (!select) return;
-    
-    select.innerHTML = '<option value="">Choose a project...</option>';
-    
-    console.log('Populating edit activity project select with', projectsData.length, 'projects');
-    
-    projectsData.forEach(project => {
-        const option = document.createElement('option');
-        option.value = project.id;
-        option.textContent = project.name;
-        select.appendChild(option);
-        console.log('Added project option for edit:', project.id, project.name);
-    });
-}
-
-function populateEditActivityTasks() {
-    const projectSelect = document.getElementById('editActivityProject');
-    const taskSelect = document.getElementById('editActivityTask');
-    
-    if (!projectSelect || !taskSelect) return;
-    
-    const selectedProjectId = projectSelect.value;
-    
-    // Reset task select
-    taskSelect.innerHTML = '<option value="">Choose a task...</option>';
-    taskSelect.disabled = true;
-    
-    if (!selectedProjectId) {
-        return;
-    }
-    
-    // Enable task select
-    taskSelect.disabled = false;
-    
-    // Filter tasks by selected project
-    const projectTasks = tasksData.filter(task => 
-        task.proj_id == selectedProjectId && 
-        task.state !== 'done' && 
-        task.state !== 'closed'
-    );
-    
-    console.log('Found', projectTasks.length, 'tasks for edit project', selectedProjectId);
-    
-    projectTasks.forEach(task => {
-        const option = document.createElement('option');
-        option.value = task.id;
-        option.textContent = task.title;
-        taskSelect.appendChild(option);
-        console.log('Added task option for edit project:', task.id, task.title);
-    });
-}
-
-function populateParentTaskSelects() {
-    // Populate task creation form parent select
-    const taskParentSelect = document.getElementById('taskParent');
-    if (taskParentSelect) {
-        taskParentSelect.innerHTML = '<option value="">No Parent (Top Level Task)</option>';
-        tasksData.forEach(task => {
-            const option = document.createElement('option');
-            option.value = task.id;
-            option.textContent = task.title;
-            taskParentSelect.appendChild(option);
-        });
-    }
-    
-    // Populate task edit form parent select
-    const editTaskParentSelect = document.getElementById('editTaskParent');
-    if (editTaskParentSelect) {
-        editTaskParentSelect.innerHTML = '<option value="">No Parent (Top Level Task)</option>';
-        tasksData.forEach(task => {
-            const option = document.createElement('option');
-            option.value = task.id;
-            option.textContent = task.title;
-            editTaskParentSelect.appendChild(option);
-        });
-    }
-}
-
-async function loadTodaySchedule() {
+// Fetch all projects (no pagination)
+async function loadAllProjects() {
     try {
         const apiKey = localStorage.getItem('apiKey');
-        if (!apiKey) return;
-
-        // Reset pagination for today's view
-        currentPage = 0;
-        
-        // Get today's date in the user's timezone, not browser's local timezone
-        const userTz = userTimezone || 'Asia/Tehran';
-        const now = new Date();
-        
-        // Get the current date in the user's timezone
-        const today = now.toLocaleDateString('en-CA', { timeZone: userTz });
-        
-        console.log('Loading today schedule for timezone:', userTz);
-        console.log('Current time (browser):', now);
-        console.log('Today in user timezone:', today);
-        
-        // Set filter to date-range for today
-        currentFilter = 'date-range';
-        currentFilterParams = { start_date: today, end_date: today };
-        
-        // Use the date-range endpoint to get activities that overlap with today
-        const response = await fetch(`/activities/date-range?start_date=${today}&end_date=${today}&timezone=${encodeURIComponent(userTz)}`, {
-            headers: {
-                'X-API-Key': apiKey
-            }
+        if (!apiKey) {
+            console.error('No API key found for loading projects');
+            return;
+        }
+        const response = await fetch('/projects/?skip=0&limit=10000', {
+            headers: { 'X-API-Key': apiKey }
         });
-
         if (response.ok) {
-            scheduleData = await response.json();
-            updateScheduleTitle("Today's Schedule");
-            displaySchedule();
-            
-            // Hide pagination for today's view since we want to show all today's activities
-            showPaginationControls(false);
+            projectsData = await response.json();
+            // Update projectCache with all projects
+            projectsData.forEach(project => { projectCache[project.id] = project; });
+            populateProjectSelects();
+            populateActivityProjectSelect();
         }
     } catch (error) {
-        console.error('Error loading schedule:', error);
+        console.error('Error loading all projects:', error);
     }
 }
 
-async function showAllActivities() {
-    try {
-        const apiKey = localStorage.getItem('apiKey');
-        if (!apiKey) return;
-
-        // Reset pagination for all activities view
-        currentPage = 0;
-        currentFilter = 'all';
-        currentFilterParams = null;
-
-        await loadActivitiesWithPagination();
-        updateScheduleTitle("All Activities");
-        
-        // Update the button text and onclick using ID
-        const button = document.getElementById('toggleActivitiesBtn');
-        if (button) {
-            button.innerHTML = '<i class="bi bi-calendar-check me-1"></i>Show Today Only';
-            button.onclick = showTodayOnly;
-        }
-    } catch (error) {
-        console.error('Error loading all activities:', error);
-    }
-}
-
-async function showTodayOnly() {
-    await loadTodaySchedule();
-    
-    // Update the button text back using ID
-    const button = document.getElementById('toggleActivitiesBtn');
-    if (button) {
-        button.innerHTML = '<i class="bi bi-list me-1"></i>Show All Activities';
-        button.onclick = showAllActivities;
-    }
-}
-
-async function checkCurrentActivity() {
-    try {
-        const apiKey = localStorage.getItem('apiKey');
-        if (!apiKey) return;
-
-        console.log('checkCurrentActivity: Starting to check for current DOING activity...');
-
-        // Use the new current activity endpoint
-        const response = await fetch('/activities/current-activity', {
-            headers: {
-                'X-API-Key': apiKey
-            }
-        });
-
-        if (response.ok) {
-            const doingActivity = await response.json();
-            console.log('checkCurrentActivity: Found current activity:', doingActivity);
-
-            if (doingActivity && doingActivity.status === 'DOING') {
-                currentActivity = doingActivity;
-                updateCurrentActivityDisplay(true);
-                await enableActivityButtons();
-                startClockInTimer();
-                console.log('checkCurrentActivity: Successfully set up current activity:', doingActivity);
-            } else {
-                console.log('checkCurrentActivity: No current activity found');
-                // Clear current activity if it was set before
-                if (currentActivity) {
-                    console.log('checkCurrentActivity: Clearing current activity:', currentActivity);
-                    currentActivity = null;
-                    document.getElementById('currentActivityInfo').innerHTML = `
-                        <p class=\"mb-1\">No active activity</p>
-                        <small>Click \"Clock In\" to start tracking your work</small>
-                    `;
-                    document.getElementById('currentTime').textContent = '--:--';
-                    document.getElementById('startTime').textContent = '--:--';
-                    if (clockInInterval) clearInterval(clockInInterval);
-                    setCurrentTime();
-                }
-                await enableActivityButtons();
-            }
-        } else if (response.status === 404) {
-            console.log('checkCurrentActivity: No current activity found (404)');
-            // Clear current activity if it was set before
-            if (currentActivity) {
-                console.log('checkCurrentActivity: Clearing current activity:', currentActivity);
-                currentActivity = null;
-                document.getElementById('currentActivityInfo').innerHTML = `
-                    <p class=\"mb-1\">No active activity</p>
-                    <small>Click \"Clock In\" to start tracking your work</small>
-                `;
-                document.getElementById('currentTime').textContent = '--:--';
-                document.getElementById('startTime').textContent = '--:--';
-                if (clockInInterval) clearInterval(clockInInterval);
-                setCurrentTime();
-            }
-            await enableActivityButtons();
-        } else {
-            console.error('checkCurrentActivity: Failed to fetch activities:', response.status, response.statusText);
-        }
-    } catch (error) {
-        console.error('checkCurrentActivity: Error checking current activity:', error);
-    }
-}
-
-function updateScheduleTitle(title) {
-    const titleElement = document.getElementById('scheduleTitle');
-    if (titleElement) {
-        titleElement.textContent = title;
-    }
-}
-
-function updatePaginationInfo() {
-    const startItem = currentPage * pageSize + 1;
-    const endItem = Math.min((currentPage + 1) * pageSize, totalActivities);
-    const totalCount = totalActivities;
-    
-    document.getElementById('currentRange').textContent = `${startItem}-${endItem}`;
-    document.getElementById('totalCount').textContent = totalCount;
-    
-    // Update pagination buttons
-    const prevBtn = document.getElementById('prevPageBtn');
-    const nextBtn = document.getElementById('nextPageBtn');
-    
-    if (prevBtn) {
-        prevBtn.classList.toggle('disabled', currentPage === 0);
-    }
-    if (nextBtn) {
-        nextBtn.classList.toggle('disabled', endItem >= totalCount);
-    }
-}
-
-function showPaginationControls(show) {
-    const controls = document.getElementById('paginationControls');
-    if (controls) {
-        controls.classList.toggle('d-none', !show);
-    }
-}
-
+// Paginated activities only
 async function loadActivitiesWithPagination() {
     try {
         const apiKey = localStorage.getItem('apiKey');
         if (!apiKey) return;
-        
         let url = `/activities/?skip=${currentPage * pageSize}&limit=${pageSize}&timezone=${encodeURIComponent(userTimezone || 'Asia/Tehran')}`;
-        
         if (currentFilter === 'date-range' && currentFilterParams) {
             url = `/activities/date-range?start_date=${currentFilterParams.start_date}&end_date=${currentFilterParams.end_date}&skip=${currentPage * pageSize}&limit=${pageSize}&timezone=${encodeURIComponent(userTimezone || 'Asia/Tehran')}`;
         }
-        
-        console.log('Loading activities with URL:', url);
-        console.log('Current filter:', currentFilter);
-        console.log('Current filter params:', currentFilterParams);
-        
         const response = await fetch(url, {
-            headers: {
-                'X-API-Key': apiKey
-            }
+            headers: { 'X-API-Key': apiKey }
         });
-        
         if (response.ok) {
             let activities = await response.json();
             console.log('Received activities:', activities);
@@ -722,6 +430,7 @@ async function loadActivitiesWithPagination() {
             scheduleData = activities;
             console.log('Updated scheduleData:', scheduleData);
             console.log('scheduleData count:', scheduleData.length);
+            setCurrentDoingActivityFromSchedule();
             displaySchedule();
             
             // Load total count
@@ -730,7 +439,7 @@ async function loadActivitiesWithPagination() {
             console.error('Failed to load activities:', response.status, response.statusText);
         }
     } catch (error) {
-        console.error('Error loading activities with pagination:', error);
+        console.error('Error loading activities:', error);
     }
 }
 
@@ -762,7 +471,6 @@ async function loadTotalCount() {
             
             totalActivities = count;
             updatePaginationInfo();
-            showPaginationControls(totalActivities > pageSize);
         }
     } catch (error) {
         console.error('Error loading total count:', error);
@@ -858,180 +566,6 @@ async function startNearestScheduledActivity() {
     }
 }
 
-function displaySchedule() {
-    console.log('displaySchedule called with scheduleData:', scheduleData);
-    const scheduleList = document.getElementById('scheduleList');
-    
-    if (scheduleData.length === 0) {
-        console.log('No activities found, showing empty message');
-        scheduleList.innerHTML = '<p class="text-muted text-center">No activities found</p>';
-        return;
-    }
-
-    // Filter activities to only show those for the selected date if we're in date-range mode
-    let activitiesToDisplay = scheduleData;
-    if (currentFilter === 'date-range' && currentFilterParams) {
-        const selectedDate = new Date(currentFilterParams.start_date);
-        const selectedDateStr = selectedDate.toDateString();
-        
-        activitiesToDisplay = scheduleData.filter(activity => {
-            const activityDate = new Date(activity.clock_in);
-            const activityDateStr = activityDate.toDateString();
-            const matches = activityDateStr === selectedDateStr;
-            console.log(`Activity ${activity.id}: ${activityDateStr} vs ${selectedDateStr} = ${matches}`);
-            return matches;
-        });
-        
-        console.log(`Filtered ${scheduleData.length} activities to ${activitiesToDisplay.length} for selected date`);
-    }
-
-    // Sort by clock_in time
-    activitiesToDisplay.sort((a, b) => new Date(a.clock_in) - new Date(b.clock_in));
-
-    const now = new Date();
-    const currentHour = now.getHours();
-
-    let html = '';
-    activitiesToDisplay.forEach((activity, index) => {
-        // Convert both IDs to numbers for comparison
-        const task = tasksData.find(t => Number(t.id) === Number(activity.task_id));
-        console.log('Activity task_id:', activity.task_id, 'Type:', typeof activity.task_id);
-        console.log('Available task IDs:', tasksData.map(t => ({id: t.id, type: typeof t.id, title: t.title})));
-        console.log('Found task:', task);
-        
-        // Get project name and color for this task
-        let projectName = 'N/A';
-        let projectColor = '#95a5a6'; // Default color
-        if (task) {
-            const project = projectsData.find(p => Number(p.id) === Number(task.proj_id));
-            if (project) {
-                projectName = project.name;
-                projectColor = project.color || '#95a5a6'; // Use project color or default
-            }
-        }
-        
-        const activityTime = new Date(activity.clock_in);
-        const time = activityTime.toLocaleTimeString('en-US', {
-            hour12: false,
-            hour: '2-digit',
-            minute: '2-digit',
-            timeZone: userTimezone || 'Asia/Tehran'
-        });
-        
-        // Format the date
-        const date = activityTime.toLocaleDateString('en-US', {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            timeZone: userTimezone || 'Asia/Tehran'
-        });
-
-        // Format clock-out time if available
-        let clockOutTime = '';
-        let duration = '';
-        if (activity.clock_out) {
-            const clockOutDate = new Date(activity.clock_out);
-            clockOutTime = clockOutDate.toLocaleTimeString('en-US', {
-                hour12: false,
-                hour: '2-digit',
-                minute: '2-digit',
-                timeZone: userTimezone || 'Asia/Tehran'
-            });
-            
-            // Calculate duration
-            const durationMs = clockOutDate - activityTime;
-            const durationMinutes = Math.floor(durationMs / 1000 / 60);
-            const hours = Math.floor(durationMinutes / 60);
-            const minutes = durationMinutes % 60;
-            duration = `${hours}h ${minutes}m`;
-        }
-
-        // Check if activity is within current hour (before or after now)
-        const activityHour = activityTime.getHours();
-        const isWithinCurrentHour = activityHour === currentHour;
-        const canClockIn = activity.status === 'PLANNED' && isWithinCurrentHour;
-
-        html += `
-            <div class="schedule-item p-3 mb-3 border rounded">
-                <div class="row align-items-center">
-                    <div class="col-md-3">
-                        <div class="time-info">
-                            <div class="d-flex flex-column">
-                                <div class="activity-date text-muted">
-                                    <i class="bi bi-calendar me-1"></i>
-                                    <small>${date}</small>
-                                </div>
-                                <div class="clock-in-time">
-                                    <i class="bi bi-clock me-1"></i>
-                                    <strong>${time}</strong>
-                                </div>
-                                ${clockOutTime ? `
-                                    <div class="clock-out-time text-success">
-                                        <i class="bi bi-clock-fill me-1"></i>
-                                        <strong>${clockOutTime}</strong>
-                                    </div>
-                                ` : ''}
-                                ${duration ? `
-                                    <div class="duration-time text-info">
-                                        <i class="bi bi-stopwatch me-1"></i>
-                                        <small>${duration}</small>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-5">
-                        <h6 class="mb-1">${task ? task.title : 'Unknown Task'}</h6>
-                        <span class="project-badge" style="background: ${projectColor}; color: white;">Project ${projectName}</span>
-                        <br>
-                        <span class="badge ${activity.status === 'DOING' ? 'bg-warning' : activity.status === 'DONE' ? 'bg-success' : 'bg-info'}">
-                            ${activity.status}
-                        </span>
-                        ${isWithinCurrentHour ? '<span class="badge bg-success ms-1">Current Hour</span>' : ''}
-                        ${activity.status === 'DONE' ? '<span class="badge bg-success ms-1">Completed</span>' : ''}
-                        ${activity.description ? `
-                            <div class="activity-description mt-2 p-2 bg-light rounded">
-                                <i class="bi bi-chat-text me-1 text-muted"></i>
-                                <span class="text-dark">${activity.description}</span>
-                            </div>
-                        ` : ''}
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <div class="btn-group" role="group">
-                            ${canClockIn ? 
-                                `<button class="btn btn-sm btn-success" onclick="clockInActivity(${activity.id})">
-                                    <i class="bi bi-clock me-1"></i>Clock In
-                                </button>` : 
-                                activity.status === 'PLANNED' ? 
-                                `<button class="btn btn-sm btn-outline-primary" onclick="startScheduledActivity(${activity.id})">
-                                    <i class="bi bi-play me-1"></i>Start
-                                </button>` : 
-                                activity.status === 'DONE' ?
-                                `<button class="btn btn-sm btn-outline-success" disabled>
-                                    <i class="bi bi-check-circle me-1"></i>Completed
-                                </button>` :
-                                `<button class="btn btn-sm btn-outline-warning" disabled>
-                                    <i class="bi bi-clock me-1"></i>In Progress
-                                </button>`
-                            }
-                            <button class="btn btn-sm btn-outline-warning" onclick="editActivity(${activity.id})" title="Edit Activity">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteActivity(${activity.id})" title="Delete Activity">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-
-    scheduleList.innerHTML = html;
-}
-
-
-
 async function startScheduledActivity(activityId) {
     try {
         const apiKey = localStorage.getItem('apiKey');
@@ -1068,7 +602,7 @@ async function startScheduledActivity(activityId) {
             startClockInTimer();
             
             // Reload schedule to show updated status
-            await loadTodaySchedule();
+            await loadActivitiesWithPagination();
             
             showToast('success', 'Success!', 'Activity started successfully!');
         } else {
@@ -1115,7 +649,7 @@ async function clockInActivity(activityId) {
             startClockInTimer();
             
             // Reload schedule to show updated status
-            await loadTodaySchedule();
+            await loadActivitiesWithPagination();
             
             showToast('success', 'Success!', 'Successfully clocked in!');
         } else {
@@ -1153,6 +687,19 @@ async function startActivity(taskId, status, clockIn, isScheduled = false, clock
 
         console.log('Creating activity with data:', requestBody);
 
+        // --- Update task state to 'doing' if activity is being started ---
+        if (finalStatus === 'DOING') {
+            await fetch(`/tasks/${taskId}`, {
+                method: 'PUT',
+                headers: {
+                    'X-API-Key': apiKey,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ state: 'doing' })
+            });
+        }
+        // --- End update task state ---
+
         const response = await fetch('/activities/', {
             method: 'POST',
             headers: {
@@ -1185,7 +732,7 @@ async function startActivity(taskId, status, clockIn, isScheduled = false, clock
             }
             
             // Reload schedule to show new activities
-            await loadTodaySchedule();
+            await loadActivitiesWithPagination();
             // Refresh dashboard data without page reload
             await refreshDashboardData();
         } else {
@@ -1321,14 +868,14 @@ function startClockInTimer() {
 }
 
 // Event Listeners
-document.getElementById('onScheduleBtn').addEventListener('click', async function() {
-    if (currentActivity) {
-        updateCurrentActivityDisplay(true);
-    } else {
-        // Find and start the nearest scheduled activity
-        await startNearestScheduledActivity();
-    }
-});
+// document.getElementById('onScheduleBtn').addEventListener('click', async function() {
+//     if (currentActivity) {
+//         updateCurrentActivityDisplay(true);
+//     } else {
+//         // Find and start the nearest scheduled activity
+//         await startNearestScheduledActivity();
+//     }
+// });
 
 document.getElementById('clockOutBtn').addEventListener('click', async function() {
     console.log('Clock out button clicked!');
@@ -1357,6 +904,19 @@ document.getElementById('clockOutBtn').addEventListener('click', async function(
         console.log('Sending clock out data:', clockOutData);
         console.log('Current activity before clock out:', currentActivity);
 
+        // --- Update task state to 'done' when clocking out ---
+        if (currentActivity.task_id) {
+            await fetch(`/tasks/${currentActivity.task_id}`, {
+                method: 'PUT',
+                headers: {
+                    'X-API-Key': apiKey,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ state: 'done' })
+            });
+        }
+        // --- End update task state ---
+
         const response = await fetch(`/activities/${currentActivity.id}`, {
             method: 'PUT',
             headers: {
@@ -1383,8 +943,10 @@ document.getElementById('clockOutBtn').addEventListener('click', async function(
             document.getElementById('startTime').textContent = '--:--';
             
             // Disable buttons
-            document.getElementById('onScheduleBtn').disabled = true;
-            document.getElementById('clockOutBtn').disabled = true;
+            const onScheduleBtn = document.getElementById('onScheduleBtn');
+            if (onScheduleBtn) onScheduleBtn.disabled = true;
+            const clockOutBtn = document.getElementById('clockOutBtn');
+            if (clockOutBtn) clockOutBtn.disabled = true;
             
             // Re-enable on schedule button if there are planned activities
             await enableActivityButtons();
@@ -1395,10 +957,10 @@ document.getElementById('clockOutBtn').addEventListener('click', async function(
             setCurrentTime();
             
             // Reload schedule to show updated status
-            await loadTodaySchedule();
+            await loadActivitiesWithPagination();
             
             // Double-check current activity state from server
-            await checkCurrentActivity();
+            await checkForPlannedActivities();
             
             showToast('success', 'Success!', 'Successfully clocked out!');
         } else {
@@ -1676,7 +1238,7 @@ async function filterScheduleByDate() {
             currentFilterParams = { start_date: startDate, end_date: endDate };
             
             await loadActivitiesWithPagination();
-            updateScheduleTitle(`Activities (${startDate} to ${endDate})`);
+            document.getElementById('scheduleTitle').textContent = `Activities (${startDate} to ${endDate})`;
             
             // Update button text
             const button = document.getElementById('toggleActivitiesBtn');
@@ -1713,7 +1275,7 @@ async function clearScheduleFilter() {
     currentPage = 0;
     currentFilter = 'today';
     currentFilterParams = null;
-    await loadTodaySchedule();
+    await loadActivitiesWithPagination();
     showToast('info', 'Filter Cleared', 'Showing today\'s activities');
 }
 
@@ -1746,13 +1308,13 @@ async function applyActivityFilters() {
         currentFilter = 'date-range';
         currentFilterParams = { start_date: startDate, end_date: endDate };
         await loadActivitiesWithPagination();
-        updateScheduleTitle(`Activities (${startDate} to ${endDate})`);
+        document.getElementById('scheduleTitle').textContent = `Activities (${startDate} to ${endDate})`;
     } else {
         // All activities with status/task filters
         currentFilter = 'all';
         currentFilterParams = null;
         await loadActivitiesWithPagination();
-        updateScheduleTitle('All Activities');
+        document.getElementById('scheduleTitle').textContent = 'All Activities';
     }
     
     // Update button text
@@ -1798,7 +1360,7 @@ async function clearActivityFilters() {
     currentPage = 0;
     currentFilter = 'today';
     currentFilterParams = null;
-    await loadTodaySchedule();
+    await loadActivitiesWithPagination();
     
     showToast('info', 'Filters Cleared', 'Showing today\'s activities');
 }
@@ -1818,20 +1380,19 @@ function populateActivityTaskFilter() {
 }
 
 // Load Models
-async function loadModels() {
+async function loadModels(page = 0) {
     try {
         const apiKey = localStorage.getItem('apiKey');
         if (!apiKey) return;
-
-        const response = await fetch('/models/', {
+        let url = `/models/?skip=${page * modelsPageSize}&limit=${modelsPageSize}`;
+        const response = await fetch(url, {
             headers: {
                 'X-API-Key': apiKey
             }
         });
-
         if (response.ok) {
             modelsData = await response.json();
-            console.log('Loaded models:', modelsData);
+            modelsCurrentPage = page;
             displayModelsList();
         }
     } catch (error) {
@@ -1839,48 +1400,58 @@ async function loadModels() {
     }
 }
 
+function modelsPreviousPage() {
+    if (modelsCurrentPage > 0) {
+        modelsCurrentPage--;
+        loadModels(modelsCurrentPage);
+    }
+}
+
+function modelsNextPage() {
+    if ((modelsCurrentPage + 1) * modelsPageSize < modelsData.length) {
+        modelsCurrentPage++;
+        loadModels(modelsCurrentPage);
+    }
+}
+
 // Load Projects
-async function loadProjects() {
+async function loadProjects(page = 0) {
     try {
         const apiKey = localStorage.getItem('apiKey');
         if (!apiKey) {
             console.error('No API key found for loading projects');
             return;
         }
-
         console.log('Loading projects with API key:', apiKey);
-
-        const response = await fetch('/projects/', {
+        let url = `/projects/?skip=${page * projectsPageSize}&limit=${projectsPageSize}`;
+        const response = await fetch(url, {
             headers: {
                 'X-API-Key': apiKey
             }
         });
-
         console.log('Projects response status:', response.status);
-
         if (response.ok) {
             projectsData = await response.json();
-            console.log('Loaded projects:', projectsData);
-            console.log('Project IDs and types:', projectsData.map(p => ({id: p.id, type: typeof p.id, name: p.name})));
+            projectsCurrentPage = page;
             populateProjectSelects();
-        } else {
-            // Try to parse JSON error response
-            let errorMessage = 'Unknown error';
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.detail || 'Unknown error';
-            } catch (parseError) {
-                // If JSON parsing fails, get the text response
-                const textResponse = await response.text();
-                console.error('Non-JSON response:', textResponse);
-                errorMessage = `Server error (${response.status}): ${textResponse.substring(0, 100)}`;
-            }
-            console.error('Error loading projects:', errorMessage);
-            alert(`Failed to load projects: ${errorMessage}`);
+            populateActivityProjectSelect();
         }
     } catch (error) {
         console.error('Error loading projects:', error);
-        alert(`Error loading projects: ${error.message}`);
+    }
+}
+
+function projectsPreviousPage() {
+    if (projectsCurrentPage > 0) {
+        projectsCurrentPage--;
+        loadProjects(projectsCurrentPage);
+    }
+}
+
+function projectsNextPage() {
+    if ((projectsCurrentPage + 1) * projectsPageSize < projectsData.length) {
+        projectsCurrentPage++;
+        loadProjects(projectsCurrentPage);
     }
 }
 
@@ -1919,8 +1490,8 @@ function populateTaskSelect() {
         
         console.log('Populating task select with', tasksData.length, 'tasks');
         
-        // Filter out tasks that are done or closed
-        const availableTasks = tasksData.filter(task => task.state !== 'done' && task.state !== 'closed');
+        // Filter out tasks that are done, closed, or deleted
+        const availableTasks = tasksData.filter(task => task.state !== 'done' && task.state !== 'closed' && task.state !== 'deleted');
         
         console.log('Available tasks for activity creation:', availableTasks.length, 'out of', tasksData.length, 'total tasks');
         
@@ -1983,38 +1554,30 @@ function displayModelsList() {
 // Display projects list
 function displayProjectsList() {
     const projectsListDiv = document.getElementById('projectsList');
-    
     if (projectsData.length === 0) {
         projectsListDiv.innerHTML = '<p class="text-muted text-center">No projects found</p>';
         return;
     }
-
-    let html = '<div class="row">';
+    let html = '<ul class="list-group">';
     projectsData.forEach(project => {
         html += `
-            <div class="col-md-6 mb-3">
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title">${project.name}</h6>
-                        <div class="d-flex align-items-center mb-2">
-                            <div class="color-indicator me-2" style="width: 20px; height: 20px; background-color: ${project.color}; border-radius: 50%;"></div>
-                            <span class="text-muted">Color: ${project.color}</span>
-                        </div>
-                        <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-warning btn-sm" onclick="editProject(${project.id})">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="btn btn-outline-danger btn-sm" onclick="deleteProject(${project.id})">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+                <span>
+                    <span class="color-indicator me-2" style="display:inline-block;width:14px;height:14px;background-color:${project.color};border-radius:50%;vertical-align:middle;"></span>
+                    <span style="vertical-align:middle;">${project.name}</span>
+                </span>
+                <span>
+                    <button class="btn btn-outline-warning btn-sm me-1" onclick="editProject(${project.id})" title="Edit">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="deleteProject(${project.id})" title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </span>
+            </li>
         `;
     });
-    html += '</div>';
-    
+    html += '</ul>';
     projectsListDiv.innerHTML = html;
 }
 
@@ -2057,103 +1620,50 @@ function displayTasksList() {
         tasksPaginationDiv.classList.add('d-none');
     }
 
-    console.log('Displaying tasks list with', currentPageTasks.length, 'tasks');
-    console.log('Available projects:', projectsData);
-    console.log('Task project IDs:', currentPageTasks.map(t => ({id: t.id, proj_id: t.proj_id, type: typeof t.proj_id})));
-
-    let html = '<div class="row">';
+    let html = `<div class="table-responsive"><table class="table table-sm align-middle">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Parent</th>
+                <th>Progress</th>
+                <th>Deadline</th>
+            </tr>
+        </thead>
+        <tbody>`;
     currentPageTasks.forEach(task => {
-        // Convert both IDs to numbers for comparison
         const project = projectsData.find(p => Number(p.id) === Number(task.proj_id));
         const projectName = project ? project.name : 'Unknown Project';
-        
-        // Get parent task info
-        let parentTaskInfo = '';
-        if (task.parent_task_id) {
-            const parentTask = tasksData.find(t => Number(t.id) === Number(task.parent_task_id));
-            if (parentTask) {
-                parentTaskInfo = `
-                    <div class="mb-2">
-                        <small class="text-muted">
-                            <i class="bi bi-diagram-2 me-1"></i>
-                            Parent: ${parentTask.title}
-                        </small>
-                    </div>
-                `;
-            }
-        }
-        
-        console.log('Task', task.id, 'has proj_id', task.proj_id, 'found project:', project);
-        console.log('Project ID types - Task proj_id:', typeof task.proj_id, 'Project id:', typeof project?.id);
-        console.log('Project ID values - Task proj_id:', task.proj_id, 'Available project IDs:', projectsData.map(p => p.id));
-        
-        // Calculate progress percentage
+        const parentTask = task.parent_task_id ? tasksData.find(t => Number(t.id) === Number(task.parent_task_id)) : null;
+        const parentInfo = parentTask ? `<span class="badge rounded-pill bg-info text-dark">${parentTask.title}</span>` : '';
         const progressPercentage = task.progress && task.progress.max_value > 0 
             ? Math.round((task.progress.value / task.progress.max_value) * 100) 
             : 0;
-        
-        // Format deadline for display
-        let deadlineDisplay = '';
-        if (task.deadline) {
-            const deadline = new Date(task.deadline);
-            deadlineDisplay = `
-                <div class="mb-2">
-                    <small class="text-muted">
-                        <i class="bi bi-calendar-event me-1"></i>
-                        Deadline: ${deadline.toLocaleDateString()} ${deadline.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                    </small>
-                </div>
-            `;
-        }
-        
         html += `
-            <div class="col-md-6 mb-3">
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title">${task.title}</h6>
-                        <p class="text-muted mb-2">Project: ${projectName}</p>
-                        ${parentTaskInfo}
-                        ${deadlineDisplay}
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-${task.energy_level === 'HIGH' ? 'danger' : task.energy_level === 'MEDIUM' ? 'warning' : 'success'}">
-                                ${task.energy_level} Energy
-                            </span>
-                            <span class="badge bg-${task.state === 'done' ? 'success' : task.state === 'doing' ? 'warning' : 'secondary'}">
-                                ${task.state.toUpperCase()}
-                            </span>
-                        </div>
-                        <div class="d-flex gap-1 mb-2">
+            <tr>
+                <td class="fw-bold">
+                    <span style='cursor:pointer;' onclick='editTask(${task.id})' title='Edit Task'>${task.title}</span>
+                    <div style='font-weight:normal; margin-top:2px;'>
+                        <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">
+                            <span class="badge bg-${task.state === 'done' ? 'success' : task.state === 'doing' ? 'warning' : 'secondary'}">${task.state.toUpperCase()}</span>
+                            <span class="badge bg-${task.energy_level === 'HIGH' ? 'danger' : task.energy_level === 'MEDIUM' ? 'warning' : 'success'}">${task.energy_level} Energy</span>
                             ${task.is_important ? '<span class="badge bg-danger">Important</span>' : ''}
                             ${task.is_urgent ? '<span class="badge bg-warning">Urgent</span>' : ''}
-                        </div>
-                        ${task.progress ? `
-                            <div class="mb-2">
-                                <small class="text-muted">Progress: ${task.progress.value} / ${task.progress.max_value} ${task.progress.unit}</small>
-                                <div class="progress mt-1" style="height: 8px;">
-                                    <div class="progress-bar" role="progressbar" style="width: ${progressPercentage}%" 
-                                         aria-valuenow="${progressPercentage}" aria-valuemin="0" aria-valuemax="100">
-                                    </div>
-                                </div>
-                            </div>
-                        ` : ''}
-                        <div class="btn-group btn-group-sm mt-2">
-                            <button class="btn btn-outline-info btn-sm" onclick="editProgress(${task.id}, ${task.progress_id})" title="Edit Progress">
-                                <i class="bi bi-graph-up"></i>
-                            </button>
-                            <button class="btn btn-outline-warning btn-sm" onclick="editTask(${task.id})" title="Edit Task">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="btn btn-outline-danger btn-sm" onclick="deleteTask(${task.id})" title="Delete Task">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            ${project ? `<span class="badge" style="background:${project.color};color:${getContrastYIQ(project.color)};">${projectName}</span>` : ''}
                         </div>
                     </div>
-                </div>
-            </div>
+                </td>
+                <td>${parentInfo}</td>
+                <td>
+                    ${task.progress ? `<div class='progress' style='height: 18px; cursor:pointer;' onclick='editProgress(${task.id}, ${task.progress_id})' title='Edit Progress'><div class='progress-bar bg-info' role='progressbar' style='width: ${progressPercentage}%' aria-valuenow='${progressPercentage}' aria-valuemin='0' aria-valuemax='100'>${progressPercentage}%</div></div>` : ''}
+                </td>
+                <td>${task.deadline ? `<span class=\"text-muted\"><i class=\"bi bi-calendar-event me-1\"></i>${new Date(task.deadline).toLocaleDateString()}</span>` : ''}</td>
+                <td class="text-center">
+                    <input type="checkbox" class="form-check-input" onchange="if(this.checked){closeTask(${task.id})}\" title="Close Task" />
+                </td>
+            </tr>
         `;
     });
-    html += '</div>';
-    
+    html += '</tbody></table></div>';
     tasksListDiv.innerHTML = html;
 }
 
@@ -2230,14 +1740,8 @@ async function applyTaskFilters() {
     // Reset to first page
     tasksCurrentPage = 0;
     
-    // If project filter is selected, load tasks for that project
-    if (taskFilters.project) {
-        await loadTasks(taskFilters.project);
-    } else {
-        await loadTasks(); // Load all tasks
-    }
-    
-    // Display filtered tasks
+    // Always load all tasks, then filter on frontend
+    await loadAllTasks();
     displayTasksList();
 }
 
@@ -2266,9 +1770,7 @@ async function clearTaskFilters() {
     tasksCurrentPage = 0;
     
     // Load all tasks
-    await loadTasks();
-    
-    // Display all tasks
+    await loadAllTasks();
     displayTasksList();
 }
 
@@ -2305,16 +1807,9 @@ function populateTaskFilters() {
     // Add event listener for project filter (only if not already added)
     if (!projectFilter.hasAttribute('data-listener-added')) {
         projectFilter.addEventListener('change', async function() {
-            const selectedProject = this.value;
-            if (selectedProject) {
-                // Load tasks for selected project
-                await loadTasks(selectedProject);
-                displayTasksList();
-            } else {
-                // Load all tasks
-                await loadTasks();
-                displayTasksList();
-            }
+            await loadAllTasks();
+            displayTasksList();
+            populateParentTaskFilter(); // Repopulate parent task filter when project changes
         });
         projectFilter.setAttribute('data-listener-added', 'true');
     }
@@ -2326,12 +1821,18 @@ function populateTaskFilters() {
 function populateParentTaskFilter() {
     const parentTaskFilter = document.getElementById('parentTaskFilter');
     const currentParentValue = parentTaskFilter.value; // Preserve current selection
-    
+    const projectFilter = document.getElementById('projectFilter');
+    const selectedProjectId = projectFilter ? projectFilter.value : '';
+
     parentTaskFilter.innerHTML = '<option value="">All Tasks</option><option value="no_parent">No Parent (Top Level)</option>';
-    tasksData.forEach(task => {
+    let filteredTasks = tasksData;
+    if (selectedProjectId) {
+        filteredTasks = tasksData.filter(task => String(task.proj_id) === String(selectedProjectId));
+    }
+    filteredTasks.forEach(task => {
         parentTaskFilter.innerHTML += `<option value="${task.id}">${task.title}</option>`;
     });
-    
+
     // Restore the previous selection if it exists
     if (currentParentValue) {
         parentTaskFilter.value = currentParentValue;
@@ -2500,7 +2001,7 @@ async function showCreateTaskForm() {
     
     // Ensure both tasks and projects are loaded when opening the modal
     console.log('Loading tasks and projects...');
-    await loadTasks();
+    await loadAllTasks();
     await loadProjects();
     console.log('Tasks and projects loaded, now displaying tasks list');
     // displayTasksList() will be called by populateProjectSelects() after projects are loaded
@@ -2644,9 +2145,32 @@ async function editTask(taskId) {
         });
         if (response.ok) {
             const task = await response.json();
+            // Populate project select for edit modal first
+            populateEditProjectSelect();
+            const projectSelect = document.getElementById('editTaskProject');
+            // Ensure the project is present in the select
+            let found = false;
+            for (let i = 0; i < projectSelect.options.length; i++) {
+                if (String(projectSelect.options[i].value).trim() === String(task.proj_id).trim()) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found && task.proj_id) {
+                const opt = document.createElement('option');
+                opt.value = String(task.proj_id).trim();
+                opt.textContent = `Project ${task.proj_id}`;
+                projectSelect.appendChild(opt);
+            }
+            // Debug: log options and value being set
+            console.log('Setting project select value:', task.proj_id, 'Options:', Array.from(projectSelect.options).map(o => o.value));
+            // Set value after a short delay to ensure select is ready
+            setTimeout(() => {
+                projectSelect.value = String(task.proj_id).trim();
+                projectSelect.dispatchEvent(new Event('change'));
+            }, 50);
             document.getElementById('editTaskId').value = task.id;
             document.getElementById('editTaskTitle').value = task.title;
-            document.getElementById('editTaskProject').value = task.proj_id;
             document.getElementById('editTaskParent').value = task.parent_task_id || '';
             document.getElementById('editTaskEnergy').value = task.energy_level;
             document.getElementById('editTaskState').value = task.state;
@@ -2736,7 +2260,7 @@ document.getElementById('updateTaskBtn').addEventListener('click', async functio
         if (response.ok) {
             const modal = bootstrap.Modal.getInstance(document.getElementById('editTaskModal'));
             modal.hide();
-            await loadTasks();
+            await loadAllTasks();
             showToast('success', 'Success!', 'Task updated successfully!');
             // Refresh dashboard data without page reload
             await refreshDashboardData();
@@ -2855,7 +2379,7 @@ document.getElementById('updateProgressBtn').addEventListener('click', async fun
             document.getElementById('progressEditForm').reset();
             
             // Reload tasks to show updated progress
-            await loadTasks();
+            await loadAllTasks();
             
             showToast('success', 'Success!', 'Progress updated successfully!');
         } else {
@@ -2875,82 +2399,28 @@ document.getElementById('editProgressValue').addEventListener('input', function(
     updateProgressBar(value, maxValue);
 });
 
-async function deleteTask(taskId) {
-    // Show confirmation modal instead of alert
-    const confirmModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
-    const confirmBtn = document.getElementById('confirmDeleteBtn');
-    const cancelBtn = document.getElementById('cancelDeleteBtn');
-    const modalBody = document.getElementById('confirmDeleteBody');
-    
-    modalBody.textContent = 'Are you sure you want to delete this task? This action cannot be undone.';
-    
-    // Set up confirmation handler
-    const handleConfirm = async () => {
-        confirmModal.hide();
-        await performTaskDeletion(taskId);
-        // Clean up event listeners
-        confirmBtn.removeEventListener('click', handleConfirm);
-        cancelBtn.removeEventListener('click', handleCancel);
-    };
-    
-    const handleCancel = () => {
-        confirmModal.hide();
-        // Clean up event listeners
-        confirmBtn.removeEventListener('click', handleConfirm);
-        cancelBtn.removeEventListener('click', handleCancel);
-    };
-    
-    confirmBtn.addEventListener('click', handleConfirm);
-    cancelBtn.addEventListener('click', handleCancel);
-    
-    confirmModal.show();
-}
-
-// Perform the actual task deletion
-async function performTaskDeletion(taskId) {
-
+async function closeTask(taskId) {
     try {
         const apiKey = localStorage.getItem('apiKey');
         const response = await fetch(`/tasks/${taskId}`, {
-            method: 'DELETE',
+            method: 'PUT',
             headers: {
-                'X-API-Key': apiKey
-            }
+                'X-API-Key': apiKey,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ state: 'closed' })
         });
-
         if (response.ok) {
-            showToast('success', 'Success!', 'Task deleted successfully!');
-            await loadTasks();
-            // Refresh dashboard data without page reload
+            showToast('success', 'Task Closed', 'Task marked as closed!');
+            await loadAllTasks();
             await refreshDashboardData();
         } else {
-            // Handle error response - only read the body once
-            let errorMessage = `Server error (${response.status}): ${response.statusText}`;
-            
-            // Try to get more detailed error information
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                try {
-                    const errorData = await response.json();
-                    errorMessage = errorData.detail || errorMessage;
-                } catch (parseError) {
-                    console.error('Failed to parse JSON error response:', parseError);
-                }
-            } else {
-                try {
-                    const textResponse = await response.text();
-                    errorMessage = `Server error (${response.status}): ${textResponse.substring(0, 100)}`;
-                } catch (textError) {
-                    console.error('Failed to read text error response:', textError);
-                }
-            }
-            
-            console.error('Failed to delete task:', errorMessage);
-            showToast('error', 'Error', `Failed to delete task: ${errorMessage}`);
+            const errorData = await response.json();
+            showToast('error', 'Error', `Failed to close task: ${errorData.detail || 'Unknown error'}`);
         }
     } catch (error) {
-        console.error('Error deleting task:', error);
-        showToast('error', 'Error', `Error deleting task: ${error.message}`);
+        console.error('Error closing task:', error);
+        showToast('error', 'Error', `Error closing task: ${error.message}`);
     }
 }
 
@@ -3016,29 +2486,46 @@ async function editActivity(activityId) {
 
         if (response.ok) {
             const activity = await response.json();
-            
-            // Populate the edit form
             document.getElementById('editActivityId').value = activity.id;
             document.getElementById('editActivityStatus').value = activity.status;
-            
-            // Find the task to get its project
-            const task = tasksData.find(t => t.id == activity.task_id);
+
+            // Find the task to get its project (try tasksData, then taskCache)
+            let task = tasksData.find(t => t.id == activity.task_id);
+            if (!task && taskCache[activity.task_id]) task = taskCache[activity.task_id];
             if (task) {
-                // First populate the project dropdown
+                // Always populate the project dropdown
                 populateEditActivityProjectSelect();
-                // Set the project
                 document.getElementById('editActivityProject').value = task.proj_id;
-                // Then populate tasks for that project
+                // Repopulate tasks for that project
                 populateEditActivityTasks();
-                // Finally set the task
-                document.getElementById('editActivityTask').value = activity.task_id;
+                // Ensure the task is present in the select, add if missing
+                const taskSelect = document.getElementById('editActivityTask');
+                let found = false;
+                for (let i = 0; i < taskSelect.options.length; i++) {
+                    if (String(taskSelect.options[i].value) === String(activity.task_id)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    // Add the missing task as a temporary option
+                    const opt = document.createElement('option');
+                    opt.value = String(activity.task_id);
+                    opt.textContent = task.title + ' (archived or unavailable)';
+                    taskSelect.appendChild(opt);
+                }
+                taskSelect.value = String(activity.task_id);
+            } else {
+                // Fallback: just populate selects
+                populateEditActivityProjectSelect();
+                populateEditActivityTasks();
             }
-            
+
             // Format datetime for input fields - convert to local timezone
             const clockIn = new Date(activity.clock_in);
             const clockInFormatted = formatDateTimeForInput(clockIn);
             document.getElementById('editActivityClockIn').value = clockInFormatted;
-            
+
             if (activity.clock_out) {
                 const clockOut = new Date(activity.clock_out);
                 const clockOutFormatted = formatDateTimeForInput(clockOut);
@@ -3046,11 +2533,9 @@ async function editActivity(activityId) {
             } else {
                 document.getElementById('editActivityClockOut').value = '';
             }
-            
-            // Set description
+
             document.getElementById('editActivityDescription').value = activity.description || '';
-            
-            // Show the modal
+
             const modal = new bootstrap.Modal(document.getElementById('editActivityModal'));
             modal.show();
         } else {
@@ -3083,12 +2568,10 @@ function populateEditTaskSelect() {
     
     // Filter out tasks that are done or closed, but include the current task
     const availableTasks = tasksData.filter(task => {
-        // Always include the current task (if editing an existing activity)
         if (currentTaskId && Number(task.id) === Number(currentTaskId)) {
             return true;
         }
-        // For other tasks, exclude done and closed ones
-        return task.state !== 'done' && task.state !== 'closed';
+        return task.state !== 'done' && task.state !== 'closed' && task.state !== 'deleted';
     });
     
     console.log('Available tasks for activity editing:', availableTasks.length, 'out of', tasksData.length, 'total tasks');
@@ -3155,7 +2638,7 @@ async function performActivityDeletion(activityId) {
 
         if (response.ok) {
             // Reload the schedule to reflect the deletion
-            await loadTodaySchedule();
+            await loadActivitiesWithPagination();
             showToast('success', 'Success!', 'Activity deleted successfully!');
             // Refresh dashboard data without page reload
             await refreshDashboardData();
@@ -3227,7 +2710,7 @@ document.getElementById('updateActivityBtn').addEventListener('click', async fun
             document.getElementById('editActivityForm').reset();
             
             // Reload schedule
-            await loadTodaySchedule();
+            await loadActivitiesWithPagination();
             
             showToast('success', 'Success!', 'Activity updated successfully!');
             // Refresh dashboard data without page reload
@@ -3326,7 +2809,7 @@ document.getElementById('newProjectForm').addEventListener('submit', async funct
             showToast('success', 'Success!', 'Project created successfully!');
             hideCreateProjectForm();
             await loadProjects();
-            await loadTasks(); // Reload tasks to update project options
+            await loadAllTasks(); // Reload tasks to update project options
             // Refresh dashboard data without page reload
             await refreshDashboardData();
         } else {
@@ -3353,7 +2836,8 @@ document.getElementById('taskProject').addEventListener('change', function() {
         const projectTasks = tasksData.filter(task => 
             Number(task.proj_id) === Number(selectedProjectId) && 
             task.state !== 'done' && 
-            task.state !== 'closed'
+            task.state !== 'closed' &&
+            task.state !== 'deleted'
         );
         
         // Add available parent tasks
@@ -3372,27 +2856,40 @@ document.getElementById('taskProject').addEventListener('change', function() {
 async function refreshDashboardData() {
     try {
         console.log('Refreshing dashboard data...');
-        
-        // Refresh all data sources
+
+        // Helper to wrap each loader with logging and error catching
+        async function logAndRun(name, fn) {
+            try {
+                console.log(`[refreshDashboardData] Starting: ${name}`);
+                const result = await fn();
+                console.log(`[refreshDashboardData] Success: ${name}`);
+                return result;
+            } catch (err) {
+                console.error(`[refreshDashboardData] Error in ${name}:`, err);
+                throw new Error(`${name} failed: ${err && err.message ? err.message : err}`);
+            }
+        }
+
+        // Run all loaders in parallel, but with individual logging
         await Promise.all([
-            loadTasks(),
-            loadProjects(),
-            loadModels(),
-            loadActivitiesWithPagination(), // FIXED: use the correct function
-            loadTodaySchedule(),
-            loadCalendarActivities(),
-            loadTodayReminders()
+            logAndRun('loadAllTasks', loadAllTasks),
+            logAndRun('loadProjects', loadProjects),
+            logAndRun('loadModels', loadModels),
+            logAndRun('loadActivitiesWithPagination', loadActivitiesWithPagination),
+            logAndRun('loadCalendarActivities', loadCalendarActivities),
+            logAndRun('loadReminders', loadReminders)
         ]);
-        
+
         // Update UI components that depend on the refreshed data
-        updateScheduleTitle();
+        document.getElementById('scheduleTitle').textContent = "Today's Schedule";
+        setCurrentDoingActivityFromSchedule();
         enableActivityButtons();
         loadUpcomingActivities();
-        
+
         console.log('Dashboard data refreshed successfully');
     } catch (error) {
         console.error('Error refreshing dashboard data:', error);
-        showToast('error', 'Error', 'Failed to refresh dashboard data');
+        showToast('error', 'Error', `Failed to refresh dashboard data: ${error && error.message ? error.message : error}`);
     }
 }
 
@@ -3490,7 +2987,7 @@ document.getElementById('newTaskForm').addEventListener('submit', async function
         if (response.ok) {
             showToast('success', 'Success!', 'Task created successfully!');
             hideCreateTaskForm();
-            await loadTasks();
+            await loadAllTasks();
             await loadProjects(); // Also reload projects to ensure project names are available
             // Refresh dashboard data without page reload
             await refreshDashboardData();
@@ -3505,7 +3002,6 @@ document.getElementById('newTaskForm').addEventListener('submit', async function
 });
 
 // Calendar functionality
-let currentCalendarDate = new Date();
 let calendarActivities = [];
 
 // Initialize calendar
@@ -3575,7 +3071,7 @@ function renderCalendar() {
         if (activities.length > 0) {
             activitiesHTML = '<div class="calendar-day-activities">';
             activities.slice(0, 3).forEach(activity => {
-                const task = tasksData.find(t => Number(t.id) === Number(activity.task_id));
+                const task = taskCache[activity.task_id];
                 const taskTitle = task ? task.title : 'Unknown Task';
                 activitiesHTML += `<div class="calendar-day-activity">${taskTitle}</div>`;
             });
@@ -3612,17 +3108,14 @@ async function loadCalendarActivities() {
 
         // Use date-range endpoint with timezone parameter for better timezone handling
         const userTz = userTimezone || 'Asia/Tehran';
-        
-        // Get today's date in the user's timezone, not browser's local timezone
         const now = new Date();
         const todayInUserTz = new Date(now.toLocaleString('en-US', { timeZone: userTz }));
         const year = todayInUserTz.getFullYear();
         const month = String(todayInUserTz.getMonth() + 1).padStart(2, '0');
         const day = String(todayInUserTz.getDate()).padStart(2, '0');
         const todayStr = `${year}-${month}-${day}`;
-        
+
         // Get activities for a wider range to ensure calendar coverage
-        // Calculate start and end dates in user's timezone
         const startDate = new Date(todayInUserTz.getFullYear(), todayInUserTz.getMonth() - 1, 1);
         const endDate = new Date(todayInUserTz.getFullYear(), todayInUserTz.getMonth() + 2, 0);
         const startStr = startDate.toLocaleDateString('en-CA', { timeZone: userTz });
@@ -3640,6 +3133,9 @@ async function loadCalendarActivities() {
 
         if (response.ok) {
             calendarActivities = await response.json();
+            // Fetch and cache all unique task IDs for these activities
+            const uniqueTaskIds = Array.from(new Set(calendarActivities.map(a => a.task_id).filter(Boolean)));
+            await Promise.all(uniqueTaskIds.map(fetchAndCacheTask));
             console.log('Loaded calendar activities:', calendarActivities.length);
             console.log('Sample activities:', calendarActivities.slice(0, 3).map(a => ({
                 id: a.id,
@@ -3746,7 +3242,7 @@ function loadUpcomingActivities() {
         html = '<p class="text-muted text-center">No upcoming planned activities</p>';
     } else {
         upcoming.forEach(activity => {
-            const task = tasksData.find(t => Number(t.id) === Number(activity.task_id));
+            const task = taskCache[activity.task_id];
             const project = projectsData.find(p => Number(p.id) === Number(task?.proj_id));
             const projectColor = project ? project.color || '#95a5a6' : '#95a5a6';
             const activityDate = new Date(activity.clock_in);
@@ -3777,13 +3273,19 @@ function loadUpcomingActivities() {
             }
 
             html += `
-                <div class="upcoming-activity-item planned">
-                    <div class="upcoming-activity-time">
-                        ${dateStr} at ${timeStr}
-                        <small class="text-muted ms-2">(${timeUntilText})</small>
+                <div class="upcoming-activity-item ${activity.status.toLowerCase()}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="upcoming-activity-title">${task ? task.title : 'Unknown Task'}</div>
+                            <div class="upcoming-activity-project" style="color: ${projectColor}">
+                                ${project ? project.name : ''}
+                            </div>
+                        </div>
+                        <div class="upcoming-activity-time text-end">
+                            <span>${dateStr} ${timeStr}</span><br>
+                            <small class="text-muted">${timeUntilText}</small>
+                        </div>
                     </div>
-                    <div class="upcoming-activity-title">${task ? task.title : 'Unknown Task'}</div>
-                    <div class="upcoming-activity-project" style="color: ${projectColor}; font-weight: 500;">${project ? project.name : 'No Project'}</div>
                 </div>
             `;
         });
@@ -3809,6 +3311,8 @@ function goToToday() {
     const now = new Date();
     currentCalendarDate = new Date(now.toLocaleString('en-US', { timeZone: userTz }));
     renderCalendar();
+    // Reset schedule title to default
+    document.getElementById('scheduleTitle').textContent = "Today's Schedule";
 }
 
 // Select a date on the calendar
@@ -3874,9 +3378,17 @@ function selectCalendarDate(year, month, day) {
     const tempDate = new Date(year, month, day);
     const dayOfWeek = dayNames[tempDate.getDay()];
     const monthName = monthNames[month];
-    
     const dateStr = `${dayOfWeek}, ${monthName} ${day}, ${year}`;
-    updateScheduleTitle(`Activities for ${dateStr}`);
+
+    // Check if the selected date is today in the user's timezone
+    const now = new Date();
+    const todayStr = now.toLocaleDateString('en-CA', { timeZone: userTz });
+    const selectedStr = tempDate.toLocaleDateString('en-CA', { timeZone: userTz });
+    if (selectedStr === todayStr) {
+        document.getElementById('scheduleTitle').textContent = "Today's Schedule";
+    } else {
+        document.getElementById('scheduleTitle').textContent = `Activities for ${dateStr}`;
+    }
     
     // Scroll to the schedule section
     document.querySelector('.card-header h5').scrollIntoView({ behavior: 'smooth' });
@@ -3895,14 +3407,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Reminders functionality
 let remindersData = [];
+let reminderDateRange = { start: null, end: null };
 
-// Load today's reminders
-async function loadTodayReminders() {
+// Load reminders for a date range or today if no range
+async function loadReminders() {
     try {
         const apiKey = localStorage.getItem('apiKey');
         if (!apiKey) return;
 
-        const response = await fetch('/reminders/today', {
+        let url = '/reminders/today';
+        const userTz = userTimezone || 'Asia/Tehran';
+        if (reminderDateRange.start && reminderDateRange.end) {
+            url = `/reminders/date-range?start_date=${reminderDateRange.start}&end_date=${reminderDateRange.end}&timezone=${encodeURIComponent(userTz)}`;
+        }
+
+        const response = await fetch(url, {
             headers: {
                 'X-API-Key': apiKey
             }
@@ -3917,75 +3436,94 @@ async function loadTodayReminders() {
     } catch (error) {
         console.error('Error loading reminders:', error);
     }
+    updateRemindersSectionTitle();
+}
+
+function applyReminderDateRange() {
+    const start = document.getElementById('reminderStartDate').value;
+    const end = document.getElementById('reminderEndDate').value;
+    if (!start || !end) {
+        showToast('warning', 'Validation Error', 'Please select both start and end dates');
+        return;
+    }
+    reminderDateRange.start = start;
+    reminderDateRange.end = end;
+    loadReminders();
+    updateRemindersSectionTitle();
+}
+
+function clearReminderDateRange() {
+    document.getElementById('reminderStartDate').value = '';
+    document.getElementById('reminderEndDate').value = '';
+    reminderDateRange.start = null;
+    reminderDateRange.end = null;
+    loadReminders();
+    updateRemindersSectionTitle();
 }
 
 // Display reminders in the UI
-function displayReminders() {
+async function displayReminders() {
+    await ensureTasksForReminders(remindersData);
     const remindersList = document.getElementById('remindersList');
-    
     if (remindersData.length === 0) {
         remindersList.innerHTML = '<p class="text-muted text-center">No reminders for today</p>';
         return;
     }
-
     let html = '';
     remindersData.forEach(reminder => {
-        console.log('DEBUG: Processing reminder:', reminder);
-        console.log('DEBUG: reminder.when type:', typeof reminder.when);
-        console.log('DEBUG: reminder.when value:', reminder.when);
-        
         let when;
-        // Parse reminder time - backend now returns UTC ISO strings
         if (typeof reminder.when === 'string') {
             when = new Date(reminder.when);
-            console.log('DEBUG: Parsed as ISO datetime');
         } else {
             when = new Date(reminder.when);
-            console.log('DEBUG: Parsed as Date object');
         }
-        
-        console.log('DEBUG: Parsed when object:', when);
-        console.log('DEBUG: userTimezone:', userTimezone);
-        
-        // Show full local date and time in user's timezone (without timezone name)
         const dateTimeStr = when.toLocaleString('en-US', {
             year: 'numeric', month: 'short', day: 'numeric',
             hour: '2-digit', minute: '2-digit', second: '2-digit',
             hour12: false,
             timeZone: userTimezone || 'Asia/Tehran'
         });
-        
-        console.log('DEBUG: Final dateTimeStr:', dateTimeStr);
-
-        // Check if reminder is overdue
         const now = new Date();
         const isOverdue = when < now;
         const overdueClass = isOverdue ? 'text-danger' : 'text-muted';
-
+        // Use taskCache for task name
+        let taskTitle = '';
+        if (reminder.task_id && taskCache[reminder.task_id]) {
+            taskTitle = `<div class='small text-muted'>Task: ${taskCache[reminder.task_id].title}</div>`;
+        }
+        // Determine direction for description
+        let descDir = 'ltr';
+        let descAlign = 'left';
+        const desc = reminder.note || '';
+        if (desc.length > 0) {
+            const firstChar = desc.trim().charAt(0);
+            if (/^[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(firstChar)) {
+                descDir = 'rtl';
+                descAlign = 'right';
+            } else if (/^[A-Za-z]/.test(firstChar)) {
+                descDir = 'ltr';
+                descAlign = 'left';
+            }
+        }
         html += `
-            <div class="reminder-item border rounded p-3 mb-2 ${isOverdue ? 'border-danger' : 'border-light'}">
-                <div class="d-flex justify-content-between align-items-start">
+            <div class="reminder-item border rounded p-1 mb-1 ${isOverdue ? 'border-danger' : 'border-light'}" style="font-size:0.92em; cursor:pointer; position:relative;" onclick="if(event.target.classList.contains('reminder-delete-tick')) return; editReminder(${reminder.id})">
+                <div class="d-flex justify-content-between align-items-center">
                     <div class="flex-grow-1">
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="bi bi-bell me-2 ${overdueClass}"></i>
-                            <span class="fw-bold ${overdueClass}">${dateTimeStr}</span>
-                            ${isOverdue ? '<span class="badge bg-danger ms-2">Overdue</span>' : ''}
+                        <div class="d-flex align-items-center mb-1" style="gap:4px;">
+                            <i class="bi bi-bell ${overdueClass}" style="font-size:1em;"></i>
+                            <span class="fw-bold ${overdueClass}" style="font-size:0.98em;">${dateTimeStr}</span>
+                            ${isOverdue ? '<span class=\"badge bg-danger ms-1\" style=\"font-size:0.8em;\">Overdue</span>' : ''}
                         </div>
-                        <p class="mb-0">${reminder.note}</p>
+                        <p class="mb-0" style="line-height:1.3;"><span dir="${descDir}" style="text-align:${descAlign};display:block;">${desc}</span></p>
+                        ${taskTitle}
                     </div>
-                    <div class="d-flex gap-1">
-                        <button class="btn btn-sm btn-outline-primary" onclick="editReminder(${reminder.id})" title="Edit Reminder">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteReminder(${reminder.id})" title="Delete Reminder">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                    <div class="d-flex align-items-center">
+                        <span class="reminder-delete-tick" title="Delete Reminder" style="cursor:pointer; color:#dc3545; font-size:1.3em; padding:0 0.4em; user-select:none;" onclick="event.stopPropagation(); deleteReminder(${reminder.id})">✔</span>
                     </div>
                 </div>
             </div>
         `;
     });
-
     remindersList.innerHTML = html;
 }
 
@@ -4219,12 +3757,10 @@ function setDefaultReminderTime() {
 // Initialize reminder functionality
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Initializing reminder functionality...');
-    
-    // Load reminders when dashboard loads
     setTimeout(() => {
-        loadTodayReminders();
+        loadReminders();
         setDefaultReminderTime();
-    }, 1500); // Small delay to ensure other data is loaded
+    }, 1500);
 });
 
 // Add event listener for reminder modal
@@ -4241,12 +3777,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Timezone management
-let userTimezone = 'Asia/Tehran'; // Default timezone
-let availableTimezones = {};
-let selectedCountry = '';
-let selectedCity = '';
-let selectedTimezoneValue = '';
-
 // Load user timezone
 async function loadUserTimezone() {
     console.log('loadUserTimezone called - version 1.3');
@@ -4488,10 +4018,10 @@ async function updateTimezone() {
             await loadCalendarActivities();
             renderCalendar();
             loadUpcomingActivities();
-            await loadTodayReminders();
+            await loadReminders();
             updateTimezoneInfo();
             // Update current activity display with new timezone
-            await checkCurrentActivity();
+            await checkForPlannedActivities();
         } else {
             const errorData = await response.json();
             showToast('error', 'Error', `Failed to update timezone: ${errorData.detail || 'Unknown error'}`);
@@ -4511,4 +4041,190 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Timezone functionality is now loaded in the main initialization sequence
+
+window.applyReminderDateRange = applyReminderDateRange;
+window.clearReminderDateRange = clearReminderDateRange;
+
+function updateRemindersSectionTitle() {
+    const titleEl = document.getElementById('remindersSectionTitle');
+    if (reminderDateRange.start && reminderDateRange.end) {
+        if (reminderDateRange.start === reminderDateRange.end) {
+            titleEl.innerHTML = `<i class="bi bi-bell me-2"></i>Reminders for ${reminderDateRange.start}`;
+        } else {
+            titleEl.innerHTML = `<i class="bi bi-bell me-2"></i>Reminders (${reminderDateRange.start} to ${reminderDateRange.end})`;
+        }
+    } else {
+        titleEl.innerHTML = '<i class="bi bi-bell me-2"></i>Today\'s Reminders';
+    }
+}
+
+function displaySchedule() {
+    const scheduleList = document.getElementById('scheduleList');
+    if (!scheduleList) return;
+    if (!scheduleData || scheduleData.length === 0) {
+        scheduleList.innerHTML = '<p class="text-muted text-center">No activities scheduled for today.</p>';
+        return;
+    }
+    let html = '';
+    function getContrastYIQ(hexcolor) {
+        hexcolor = hexcolor.replace('#', '');
+        if (hexcolor.length === 3) hexcolor = hexcolor[0]+hexcolor[0]+hexcolor[1]+hexcolor[1]+hexcolor[2]+hexcolor[2];
+        const r = parseInt(hexcolor.substr(0,2),16);
+        const g = parseInt(hexcolor.substr(2,2),16);
+        const b = parseInt(hexcolor.substr(4,2),16);
+        const yiq = ((r*299)+(g*587)+(b*114))/1000;
+        return (yiq >= 128) ? 'black' : 'white';
+    }
+    scheduleData.forEach(activity => {
+        const task = taskCache[activity.task_id];
+        const taskTitle = task ? task.title : 'Unknown Task';
+        const project = task && projectCache[task.proj_id] ? projectCache[task.proj_id] : null;
+        const projectName = project ? project.name : '';
+        const projectColor = project ? project.color : '#95a5a6';
+        const projectTextColor = getContrastYIQ(projectColor);
+        const clockIn = new Date(activity.clock_in);
+        const clockOut = activity.clock_out ? new Date(activity.clock_out) : null;
+        const timeStr = clockIn.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', timeZone: userTimezone || 'Asia/Tehran' });
+        const endTimeStr = clockOut ? clockOut.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', timeZone: userTimezone || 'Asia/Tehran' }) : '';
+        const description = activity.description ? activity.description.replace(/"/g, '&quot;') : '';
+        html += `
+            <div class="schedule-item border rounded p-2 mb-2 d-flex align-items-center" style="min-height: 38px; max-height: 38px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;" title="${description}">
+                <span class="fw-bold text-truncate me-2" style="max-width: 22%">${taskTitle}</span>
+                <span class='badge rounded-pill text-truncate me-2' style='background:${projectColor};color:${projectTextColor};max-width: 16%'>${projectName}</span>
+                <span class="badge bg-${activity.status === 'PLANNED' ? 'info' : activity.status === 'DOING' ? 'success' : 'secondary'} me-2">${activity.status}</span>
+                <span class="small text-muted me-2" style="white-space:nowrap;"><i class="bi bi-clock me-1"></i>${timeStr}${endTimeStr ? ' - ' + endTimeStr : ''}</span>
+                <div class="d-flex gap-1 ms-auto flex-shrink-0">
+                    <button class="btn btn-sm btn-outline-primary" title="Edit Activity" onclick="editActivity(${activity.id})"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" title="Delete Activity" onclick="deleteActivity(${activity.id})"><i class="bi bi-trash"></i></button>
+                </div>
+            </div>
+        `;
+    });
+    scheduleList.innerHTML = html;
+}
+
+function populateEditActivityProjectSelect() {
+    const select = document.getElementById('editActivityProject');
+    if (!select) return;
+    select.innerHTML = '<option value="">Choose a project...</option>';
+    projectsData.forEach(project => {
+        const option = document.createElement('option');
+        option.value = project.id;
+        option.textContent = project.name;
+        select.appendChild(option);
+    });
+}
+
+function populateEditActivityTasks() {
+    const projectSelect = document.getElementById('editActivityProject');
+    const taskSelect = document.getElementById('editActivityTask');
+    if (!projectSelect || !taskSelect) return;
+    const selectedProjectId = projectSelect.value;
+    // Reset task select
+    taskSelect.innerHTML = '<option value="">Choose a task...</option>';
+    taskSelect.disabled = true;
+    if (!selectedProjectId) {
+        return;
+    }
+    // Enable task select
+    taskSelect.disabled = false;
+    // Filter tasks by selected project
+    const projectTasks = tasksData.filter(task => 
+        String(task.proj_id) === String(selectedProjectId) && 
+        task.state !== 'done' && 
+        task.state !== 'closed' &&
+        task.state !== 'deleted'
+    );
+    projectTasks.forEach(task => {
+        const option = document.createElement('option');
+        option.value = task.id;
+        option.textContent = task.title;
+        taskSelect.appendChild(option);
+    });
+}
+
+function updatePaginationInfo() {
+    // Calculate the current range of activities being shown
+    const start = totalActivities === 0 ? 0 : (currentPage * pageSize) + 1;
+    const end = Math.min((currentPage + 1) * pageSize, totalActivities);
+    // Update the DOM elements
+    const currentRange = document.getElementById('currentRange');
+    const totalCount = document.getElementById('totalCount');
+    if (currentRange && totalCount) {
+        currentRange.textContent = `${start}-${end}`;
+        totalCount.textContent = totalActivities;
+    }
+}
+
+// Helper function for text color contrast
+function getContrastYIQ(hexcolor) {
+    hexcolor = hexcolor.replace('#', '');
+    if (hexcolor.length === 3) hexcolor = hexcolor[0]+hexcolor[0]+hexcolor[1]+hexcolor[1]+hexcolor[2]+hexcolor[2];
+    const r = parseInt(hexcolor.substr(0,2),16);
+    const g = parseInt(hexcolor.substr(2,2),16);
+    const b = parseInt(hexcolor.substr(4,2),16);
+    const yiq = ((r*299)+(g*587)+(b*114))/1000;
+    return (yiq >= 128) ? 'black' : 'white';
+}
+
+// Add this function near other populate functions:
+function populateActivityProjectSelect() {
+    const select = document.getElementById('activityProject');
+    if (!select) return;
+    select.innerHTML = '<option value="">Choose a project...</option>';
+    projectsData.forEach(project => {
+        const option = document.createElement('option');
+        option.value = project.id;
+        option.textContent = project.name;
+        select.appendChild(option);
+    });
+}
+
+function populateActivityTasks() {
+    const projectSelect = document.getElementById('activityProject');
+    const taskSelect = document.getElementById('activityTask');
+    if (!projectSelect || !taskSelect) return;
+    const selectedProjectId = projectSelect.value;
+    // Reset task select
+    taskSelect.innerHTML = '<option value="">Choose a task...</option>';
+    taskSelect.disabled = true;
+    if (!selectedProjectId) {
+        return;
+    }
+    // Enable task select
+    taskSelect.disabled = false;
+    // Filter tasks by selected project, excluding done, closed, and deleted
+    const projectTasks = tasksData.filter(task => 
+        String(task.proj_id) === String(selectedProjectId) && 
+        task.state !== 'done' && 
+        task.state !== 'closed' &&
+        task.state !== 'deleted'
+    );
+    projectTasks.forEach(task => {
+        const option = document.createElement('option');
+        option.value = task.id;
+        option.textContent = task.title;
+        taskSelect.appendChild(option);
+    });
+}
+
+// Helper to set currentActivity to the most recent 'DOING' activity and update the display
+function setCurrentDoingActivityFromSchedule() {
+    if (scheduleData && scheduleData.length > 0) {
+        // Find all DOING activities
+        const doingActivities = scheduleData.filter(a => a.status === 'DOING');
+        if (doingActivities.length > 0) {
+            // Pick the most recent one (latest clock_in)
+            doingActivities.sort((a, b) => new Date(b.clock_in) - new Date(a.clock_in));
+            currentActivity = doingActivities[0];
+            updateCurrentActivityDisplay(true);
+            return;
+        }
+    }
+    // If none found, clear currentActivity section
+    currentActivity = null;
+    document.getElementById('currentActivityInfo').innerHTML = `<p class="mb-1">No active activity</p><small>Click \"Clock In\" to start tracking your work</small>`;
+    document.getElementById('startTime').textContent = '--:--';
+}
+
 

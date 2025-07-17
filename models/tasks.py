@@ -15,6 +15,7 @@ class TaskState(Enum):
     DOING = "doing"
     DONE = "done"
     CLOSED = "closed"
+    DELETED = "deleted"
 
 class Task(Base):
     __tablename__ = "tasks"

@@ -15,6 +15,7 @@ class TaskState(str, Enum):
     DOING = "doing"
     DONE = "done"
     CLOSED = "closed"
+    DELETED = "deleted"
 
 # Mapping from API enum values to database enum values
 ENERGY_LEVEL_MAP = {
@@ -28,7 +29,8 @@ TASK_STATE_MAP = {
     "todo": "todo", 
     "doing": "doing",
     "done": "done",
-    "closed": "closed"
+    "closed": "closed",
+    "deleted": "deleted"
 }
 
 class TaskBase(BaseModel):

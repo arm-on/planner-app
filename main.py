@@ -98,6 +98,10 @@ async def register_page(request: Request):
 async def dashboard_page(request: Request):
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
+@app.get("/kanban", response_class=HTMLResponse)
+async def kanban_page(request: Request):
+    return templates.TemplateResponse("kanban.html", {"request": request})
+
 @app.get("/reports", response_class=HTMLResponse)
 async def reports_page(request: Request):
     return templates.TemplateResponse("report.html", {"request": request})

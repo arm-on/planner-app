@@ -654,6 +654,23 @@ html, body {
 /* Reminder Styles */
 .reminder-item {
     transition: all 0.2s ease;
+    padding: 0.5rem 0.75rem !important;
+    margin-bottom: 0.4rem !important;
+    font-size: 0.95em !important;
+}
+
+.reminder-item .btn-sm {
+    padding: 0.1rem 0.4rem !important;
+    font-size: 0.9em !important;
+}
+
+.reminder-item .badge {
+    font-size: 0.8em !important;
+    padding: 0.2em 0.5em !important;
+}
+
+.reminder-item .bi {
+    font-size: 1em !important;
 }
 
 .reminder-item:hover {
