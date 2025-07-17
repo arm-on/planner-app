@@ -352,9 +352,10 @@ async function showSubtasksModal(parentTaskId, parentTitle) {
     modal.show();
 }
 
+// Update closeSubtask to not re-render the sidebar, just update the checkbox and local data
 async function closeSubtask(subtaskId) {
     const apiKey = localStorage.getItem('apiKey');
-    const checkbox = document.getElementById(`subtaskCheck${subtaskId}`);
+    const checkbox = document.getElementById(`subtaskSidebarCheck${subtaskId}`);
     if (!apiKey || !checkbox) return;
     checkbox.disabled = true;
     const response = await fetch(`/tasks/${subtaskId}`, {
@@ -367,13 +368,10 @@ async function closeSubtask(subtaskId) {
     });
     if (response.ok) {
         checkbox.checked = true;
-        // Update local data and re-render modal
+        // Update local data only
         const subtask = tasksData.find(t => t.id === subtaskId);
         if (subtask) subtask.state = 'closed';
-        // Optionally, re-render the modal to update disabled state
-        const parentId = subtask.parent_task_id;
-        const parentTitle = tasksData.find(t => t.id === parentId)?.title || '';
-        showSubtasksModal(parentId, parentTitle);
+        // Do NOT re-render the sidebar, so closed subtasks remain visible with their tick
     } else {
         checkbox.disabled = false;
         alert('Failed to close subtask.');
@@ -451,6 +449,8 @@ async function openActivitySidebar(taskId, taskTitle) {
     const totalM = Math.floor((totalMs / 1000 / 60) % 60);
     // Find ongoing activity if any
     const doing = activities.find(a => a.status === 'DOING');
+    // Find subtasks
+    const subtasks = tasksData.filter(t => t.parent_task_id === taskId);
     // Sidebar content
     contentDiv.innerHTML = `
       <div class='mb-3'>
@@ -467,6 +467,18 @@ async function openActivitySidebar(taskId, taskTitle) {
               <span class='badge bg-${a.status === 'DOING' ? 'success' : a.status === 'DONE' ? 'secondary' : 'info'} me-1'>${a.status}</span>
               <span>${inTime}</span>
               ${outTime ? `&rarr; <span>${outTime}</span>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class='mb-3'>
+        <div class='fw-bold mb-1'>Subtasks:</div>
+        <div>
+          ${subtasks.length === 0 ? '<span class="text-muted">No subtasks.</span>' : subtasks.map(st => {
+            const checked = st.state === 'closed' ? 'checked disabled' : '';
+            return `<div class='form-check mb-1'>
+              <input class='form-check-input' type='checkbox' id='subtaskSidebarCheck${st.id}' ${checked} onchange='closeSubtask(${st.id})'>
+              <label class='form-check-label subtask-sidebar-label' for='subtaskSidebarCheck${st.id}' style='cursor:pointer;color:#4f8cff;' onclick='openActivitySidebar(${st.id}, "${st.title.replace(/"/g, '&quot;')}")'>${st.title}</label>
             </div>`;
           }).join('')}
         </div>
