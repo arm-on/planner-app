@@ -1485,32 +1485,44 @@ function populateProjectSelects() {
 // Populate task select for activity forms
 function populateTaskSelect() {
     const select = document.getElementById('activityTask');
+    const showDoneCheckbox = document.getElementById('showDoneTasksCheckbox');
+    const projectSelect = document.getElementById('activityProject');
     if (select) {
         select.innerHTML = '<option value="">Choose a task...</option>';
-        
-        console.log('Populating task select with', tasksData.length, 'tasks');
-        
-        // Filter out tasks that are done, closed, or deleted
-        const availableTasks = tasksData.filter(task => task.state !== 'done' && task.state !== 'closed');
-        
-        console.log('Available tasks for activity creation:', availableTasks.length, 'out of', tasksData.length, 'total tasks');
-        
+        const showDone = showDoneCheckbox && showDoneCheckbox.checked;
+        const selectedProjectId = projectSelect ? projectSelect.value : '';
+        let availableTasks = [];
+        if (showDone) {
+            // Only show done tasks for the selected project
+            if (selectedProjectId) {
+                availableTasks = tasksData.filter(task => task.state === 'done' && String(task.proj_id) === String(selectedProjectId));
+            } else {
+                availableTasks = [];
+            }
+        } else {
+            // Only show open/active tasks for the selected project
+            if (selectedProjectId) {
+                availableTasks = tasksData.filter(task => task.state !== 'done' && task.state !== 'closed' && String(task.proj_id) === String(selectedProjectId));
+            } else {
+                availableTasks = [];
+            }
+        }
         availableTasks.forEach(task => {
             const option = document.createElement('option');
             option.value = task.id;
             option.textContent = task.title;
             select.appendChild(option);
-            console.log('Added task option:', task.id, task.title, '(state:', task.state, ')');
         });
     }
-    
-    // Only display tasks list if projects are also loaded
     if (projectsData && projectsData.length > 0) {
-        console.log('About to display tasks list. Projects loaded:', projectsData.length);
         displayTasksList();
-    } else {
-        console.log('Projects not loaded yet, skipping tasks list display');
     }
+}
+
+// Add event listener for the showDoneTasksCheckbox
+const showDoneCheckbox = document.getElementById('showDoneTasksCheckbox');
+if (showDoneCheckbox) {
+    showDoneCheckbox.addEventListener('change', populateTaskSelect);
 }
 
 // Display models list
@@ -3588,7 +3600,7 @@ async function createReminder(event) {
             document.getElementById('newReminderForm').reset();
             
             // Reload reminders
-            await loadTodayReminders();
+            await loadReminders();
             
             // Refresh dashboard data without page reload
             await refreshDashboardData();
@@ -3673,7 +3685,7 @@ async function updateReminder(event) {
             const modal = bootstrap.Modal.getInstance(document.getElementById('editReminderModal'));
             modal.hide();
             // Reload reminders
-            await loadTodayReminders();
+            await loadReminders();
             // No page reload!
         } else {
             const errorData = await response.json();
@@ -3730,7 +3742,7 @@ async function performReminderDeletion(reminderId) {
 
         if (response.ok) {
             showToast('success', 'Success!', 'Reminder deleted successfully!');
-            await loadTodayReminders();
+            await loadReminders();
             // No page reload!
         } else {
             const errorData = await response.json();
@@ -4304,5 +4316,11 @@ document.getElementById('deleteTaskBtn').addEventListener('click', function() {
         console.log('No task ID found!');
     }
 });
+
+// Also update the task select when the project changes
+const activityProjectSelect = document.getElementById('activityProject');
+if (activityProjectSelect) {
+    activityProjectSelect.addEventListener('change', populateTaskSelect);
+}
 
 
