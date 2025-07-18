@@ -4323,4 +4323,12 @@ if (activityProjectSelect) {
     activityProjectSelect.addEventListener('change', populateTaskSelect);
 }
 
+// Add event listener for Add Note button in edit task modal
+document.getElementById('addNoteBtn').addEventListener('click', function() {
+    const taskId = document.getElementById('editTaskId').value;
+    if (taskId) {
+        window.open(`/notes/add-note?task_id=${taskId}`, '_blank');
+    }
+});
+
 

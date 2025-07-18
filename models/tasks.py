@@ -38,4 +38,5 @@ class Task(Base):
     parent_task = relationship("Task", foreign_keys=[parent_task_id], remote_side=[id])
     progress = relationship("Progress", foreign_keys=[progress_id], back_populates="tasks")
     activities = relationship("Activity", back_populates="task")
+    notes = relationship("Note", back_populates="task", cascade="all, delete")
     

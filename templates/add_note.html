@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block head %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+    <style>
+        .add-note-header {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            font-weight: 700;
+            font-size: 1.3rem;
+            color: #3a4a6b;
+            margin-bottom: 0.5rem;
+        }
+        .add-note-card {
+            background: #fff;
+            border: 1.5px solid #e3e7f0;
+            border-radius: 12px;
+            box-shadow: 0 1px 4px rgba(79,140,255,0.04);
+            padding: 1.2rem 1.3rem 1.1rem 1.3rem;
+            margin-bottom: 2rem;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="add-note-header">
+            <i class="bi bi-journal-plus"></i>
+            Add Note for Task: {{ task.title }}
+        </div>
+        <a href="/dashboard" class="btn btn-outline-secondary">Back to Dashboard</a>
+    </div>
+    <div class="add-note-card">
+        <form method="post" action="/notes/add-note" enctype="multipart/form-data">
+            <input type="hidden" name="task_id" value="{{ task.id }}">
+            <div class="mb-3">
+                <label for="content" class="form-label">Note Content (Markdown supported)</label>
+                <textarea class="form-control" name="content" id="content" rows="8"></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="attachments" class="form-label">Attach files</label>
+                <input class="form-control" type="file" id="attachments" name="attachments" multiple>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle me-1"></i> Add Note
+                </button>
+                <a href="/notes/timeline?task_id={{ task.id }}" class="btn btn-outline-primary">
+                    <i class="bi bi-journal-text me-1"></i> Back to Timeline
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+<script>
+    var easyMDE = new EasyMDE({
+        element: document.getElementById("content"),
+        spellChecker: false,
+        status: false,
+        minHeight: "250px",
+        placeholder: "Write your note in markdown...",
+        toolbar: [
+            "bold", "italic", "heading", "|",
+            "quote", "unordered-list", "ordered-list", "|",
+            "link", {
+                name: "image",
+                action: EasyMDE.drawImage,
+                className: "fa fa-image",
+                title: "Insert Image"
+            }, "|",
+            "preview", "side-by-side", "fullscreen"
+        ],
+        imageUpload: false, // disable built-in upload
+        imageMaxSize: 5 * 1024 * 1024, // 5MB
+        imageAccept: "image/*"
+        // removed imageUploadEndpoint and imagePathAbsolute
+    });
+
+    // Custom paste handler for clipboard images using CodeMirror's event system
+    easyMDE.codemirror.on('paste', function(cm, e) {
+        console.log('Paste event fired (CodeMirror)');
+        var items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        console.log('Clipboard items:', items);
+        var foundImage = false;
+        for (var i = 0; i < items.length; i++) {
+            var item = items[i];
+            if (item.kind === 'file' && item.type.startsWith('image/')) {
+                foundImage = true;
+                e.preventDefault();
+                var file = item.getAsFile();
+                var formData = new FormData();
+                formData.append('file', file);
+                fetch('/notes/upload-image', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.file && data.file.url) {
+                        var pos = cm.getCursor();
+                        var markdown = `![](${data.file.url})`;
+                        cm.replaceRange(markdown, pos);
+                    } else {
+                        alert(data.message || 'Image upload failed.');
+                    }
+                })
+                .catch(() => {
+                    alert('Image upload failed.');
+                });
+                break;
+            }
+        }
+        if (!foundImage) {
+            alert('No image found in clipboard.');
+        }
+    });
+
+    // Global paste handler for debugging
+    window.addEventListener('paste', function(e) {
+        console.log('Global paste event fired');
+        var items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        console.log('Global clipboard items:', items);
+    });
+
+    document.querySelector('form').addEventListener('submit', function(e) {
+        document.getElementById('content').value = easyMDE.value();
+        if (!easyMDE.value().trim()) {
+            alert("Please enter some content for your note.");
+            e.preventDefault();
+        }
+    });
+</script>
+{% endblock %} 

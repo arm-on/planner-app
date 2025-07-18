@@ -195,6 +195,8 @@
                     localStorage.setItem('userId', data.user_id);
                     localStorage.setItem('username', data.username);
                     localStorage.setItem('displayName', data.display_name);
+                    // Set API key as a cookie for server-side authentication
+                    document.cookie = `apiKey=${data.api_key}; path=/;`;
                     
                     // Redirect to landing page after a short delay
                     setTimeout(() => {

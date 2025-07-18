@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+{% block head %}
+<style>
+.markdown-body {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    padding: 0.5rem 0;
+}
+.markdown-body h1, .markdown-body h2, .markdown-body h3 {
+    margin-top: 1.2em;
+    margin-bottom: 0.5em;
+}
+.markdown-body pre, .markdown-body code {
+    background: #f8f9fa;
+    border-radius: 4px;
+    padding: 2px 6px;
+}
+.timeline-header {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: #3a4a6b;
+    margin-bottom: 0.5rem;
+}
+.timeline-card {
+    background: #fff;
+    border: 1.5px solid #e3e7f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(79,140,255,0.04);
+    padding: 1.2rem 1.3rem 1.1rem 1.3rem;
+    margin-bottom: 2rem;
+}
+.note-card {
+    background: #f9fbfd;
+    border: 1px solid #e3e7f0;
+    border-radius: 10px;
+    margin-bottom: 1.1rem;
+    padding: 1rem 1.2rem 0.7rem 1.2rem;
+    box-shadow: 0 1px 2px rgba(79,140,255,0.03);
+    cursor: pointer;
+    transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
+}
+.note-card:hover {
+    box-shadow: 0 2px 8px rgba(79,140,255,0.08);
+    border-color: #b6d0f7;
+    background: #f3f8ff;
+}
+.note-card.expanded {
+    background: #fffbe7;
+    border-color: #ffe082;
+    box-shadow: 0 2px 12px rgba(255,193,7,0.08);
+}
+.note-actions {
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+}
+.collapse-btn {
+    margin-left: 0.2rem;
+    color: #888;
+    font-size: 1.1rem;
+    background: none;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.collapse-btn:hover {
+    color: #222;
+}
+.note-meta {
+    font-size: 0.98rem;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 0.3rem;
+}
+.note-meta .bi {
+    color: #4f8cff;
+    font-size: 1.1rem;
+}
+.markdown-body img.timeline-img {
+    max-width: 120px;
+    max-height: 90px;
+    margin: 0.3em 0.5em 0.3em 0;
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(79,140,255,0.10);
+    transition: box-shadow 0.2s;
+}
+.markdown-body img.timeline-img:hover {
+    box-shadow: 0 4px 16px rgba(79,140,255,0.18);
+}
+</style>
+{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="timeline-header">
+            <i class="bi bi-journal-text"></i>
+            Timeline for Task: {{ task.title }}
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/notes/add-note?task_id={{ task.id }}" class="btn btn-outline-primary">
+                <i class="bi bi-journal-plus me-1"></i> Add Note
+            </a>
+            <a href="/dashboard" class="btn btn-outline-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+    <div class="timeline-card">
+        {% if notes %}
+            {% for note in notes %}
+            <div class="note-card note-collapsed" data-note-id="{{ note.id }}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="note-meta">
+                            <i class="bi bi-clock-history"></i>
+                            <span>{{ note.when_local }}</span>
+                            <span class="badge bg-secondary">Task: {{ note.task_id }}</span>
+                        </div>
+                    </div>
+                    <div class="note-actions" style="display:none;">
+                        <a href="/notes/edit-note/{{ note.id }}" class="btn btn-sm btn-outline-info me-1" title="Edit Note">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-danger delete-note-btn" title="Delete Note" data-note-id="{{ note.id }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                        <button type="button" class="collapse-btn ms-1" title="Collapse"><i class="bi bi-chevron-up"></i></button>
+                    </div>
+                </div>
+                <div class="markdown-body note-preview" style="transition: max-height 0.3s; overflow: hidden;">{{ note.content.split('\n')[:3]|join('\n')|truncate(200, True, '...')|markdown_with_imgclass|safe }}</div>
+                <div class="markdown-body note-full" style="display:none; transition: max-height 0.3s; overflow: hidden;">{{ note.content|markdown_with_imgclass|safe }}</div>
+                {% if note.attachments and note.attachments|length > 0 %}
+                <div class="mt-2">
+                    <div class="fw-bold small mb-1"><i class="bi bi-paperclip me-1"></i>Attachments:</div>
+                    <ul class="list-group list-group-flush">
+                        {% for att in note.attachments %}
+                        <li class="list-group-item px-0 py-1">
+                            <a href="/notes/download-attachment/{{ att.id }}" target="_blank">{{ att.filename }}</a>
+                            <span class="text-muted small ms-2">{{ att.uploaded_at_local or att.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <nav>
+                <ul class="pagination justify-content-center mt-3">
+                    {% if page > 1 %}
+                    <li class="page-item"><a class="page-link" href="?task_id={{ task.id }}&page={{ page-1 }}">Previous</a></li>
+                    {% endif %}
+                    <li class="page-item disabled"><span class="page-link">Page {{ page }}</span></li>
+                    {% if total_notes > page * page_size %}
+                    <li class="page-item"><a class="page-link" href="?task_id={{ task.id }}&page={{ page+1 }}">Next</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% else %}
+            <p class="text-muted">No notes found for this task or its subtasks.</p>
+        {% endif %}
+    </div>
+</div>
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteNoteModal" tabindex="-1" aria-labelledby="deleteNoteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteNoteModalLabel"><i class="bi bi-trash me-2"></i>Delete Note</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to delete this note? This action cannot be undone.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="deleteNoteForm" method="post" style="display:inline;">
+          <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Image Preview Modal -->
+<div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="imagePreviewModalLabel">Image Preview</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img id="imagePreviewModalImg" src="" alt="Preview" style="max-width: 100%; max-height: 70vh; border-radius: 10px; box-shadow: 0 2px 16px rgba(0,0,0,0.18);">
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Robust delete modal logic for Bootstrap 5
+let deleteNoteModal = document.getElementById('deleteNoteModal');
+let deleteNoteForm = document.getElementById('deleteNoteForm');
+let bsDeleteModal = new bootstrap.Modal(deleteNoteModal);
+
+// Make timeline images small and clickable for preview
+function enableTimelineImagePreview() {
+    document.querySelectorAll('.markdown-body img').forEach(function(img) {
+        if (!img.classList.contains('timeline-img')) {
+            img.classList.add('timeline-img');
+            img.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var modalImg = document.getElementById('imagePreviewModalImg');
+                modalImg.src = img.src;
+                var modal = new bootstrap.Modal(document.getElementById('imagePreviewModal'));
+                modal.show();
+            });
+        }
+    });
+}
+
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.delete-note-btn')) {
+        let btn = e.target.closest('.delete-note-btn');
+        let noteId = btn.getAttribute('data-note-id');
+        deleteNoteForm.action = `/notes/delete-note/${noteId}`;
+        bsDeleteModal.show();
+    }
+    // Expand/collapse note on card click (ignore clicks on actions)
+    if (e.target.closest('.note-card') && !e.target.closest('.note-actions') && !e.target.closest('.delete-note-btn')) {
+        let card = e.target.closest('.note-card');
+        let preview = card.querySelector('.note-preview');
+        let full = card.querySelector('.note-full');
+        let actions = card.querySelector('.note-actions');
+        if (card.classList.contains('note-collapsed')) {
+            preview.style.display = 'none';
+            full.style.display = '';
+            actions.style.display = 'flex';
+            card.classList.remove('note-collapsed');
+            card.classList.add('expanded');
+        } else {
+            preview.style.display = '';
+            full.style.display = 'none';
+            actions.style.display = 'none';
+            card.classList.add('note-collapsed');
+            card.classList.remove('expanded');
+        }
+    }
+    // Collapse button
+    if (e.target.closest('.collapse-btn')) {
+        let card = e.target.closest('.note-card');
+        let preview = card.querySelector('.note-preview');
+        let full = card.querySelector('.note-full');
+        let actions = card.querySelector('.note-actions');
+        preview.style.display = '';
+        full.style.display = 'none';
+        actions.style.display = 'none';
+        card.classList.add('note-collapsed');
+        card.classList.remove('expanded');
+        e.stopPropagation();
+    }
+    // After expanding/collapsing, re-enable image preview
+    setTimeout(enableTimelineImagePreview, 100);
+});
+</script>
+{% endblock %} 

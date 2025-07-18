@@ -16,19 +16,20 @@ from routers import activity as activity_router
 from routers import reports as reports_router
 from routers import reminders as reminders_router
 from routers import assistant as assistant_router
+from routers.notes import router as notes_router
 from core.database import engine, Base, get_db
 from models import user, projects, models, keys, tasks, progress, reminders
 from sqlalchemy.orm import Session
 from datetime import datetime as dt
+from core.auth import check_user_auth
+import markdown2
+from core.templates import templates
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
 # Create FastAPI instance
 app = FastAPI()
-
-# Set up Jinja2 templates
-templates = Jinja2Templates(directory="templates")
 
 # Optional: Serve static files (CSS, JS, images)
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -44,34 +45,7 @@ app.include_router(activity_router.router)
 app.include_router(reports_router.router)
 app.include_router(reminders_router.router)
 app.include_router(assistant_router.router)
-
-def check_user_auth(request: Request, db: Session) -> dict:
-    """Check if user is authenticated and return user info"""
-    try:
-        # Check for API key in cookies (set by frontend)
-        api_key = request.cookies.get("apiKey")
-        if not api_key:
-            return {"is_authenticated": False, "user": None}
-        
-        # Check if key exists and is not expired
-        key_record = db.query(keys.Key).filter(
-            keys.Key.key == api_key,
-            keys.Key.expires_at > dt.utcnow()
-        ).first()
-        
-        if not key_record:
-            return {"is_authenticated": False, "user": None}
-        
-        return {
-            "is_authenticated": True, 
-            "user": {
-                "id": key_record.owner_user.id,
-                "username": key_record.owner_user.username,
-                "display_name": key_record.owner_user.display_name
-            }
-        }
-    except Exception:
-        return {"is_authenticated": False, "user": None}
+app.include_router(notes_router)
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request, db: Session = Depends(get_db)):
