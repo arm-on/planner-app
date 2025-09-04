@@ -167,7 +167,15 @@
                                 <div class="col-md-8">
                                     <div id="calendarContainer">
                                         <div class="calendar-header mb-3">
-                                            <h4 id="calendarMonthYear" class="text-center mb-0"></h4>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <button class="btn btn-sm btn-outline-secondary" onclick="previousMonth()">
+                                                    <i class="bi bi-chevron-left"></i>
+                                                </button>
+                                                <h4 id="calendarMonthYear" class="text-center mb-0"></h4>
+                                                <button class="btn btn-sm btn-outline-secondary" onclick="nextMonth()">
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                         <div class="calendar-grid">
                                             <div class="calendar-weekdays">
@@ -212,9 +220,14 @@
                                     <i class="bi bi-bell me-2"></i>
                                     Today's Reminders
                                 </h5>
-                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newReminderModal">
-                                    <i class="bi bi-plus-circle me-1"></i>Add Reminder
-                                </button>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-secondary" id="resetRemindersBtn" onclick="resetRemindersToToday()">
+                                        <i class="bi bi-arrow-clockwise me-1"></i>Reset
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newReminderModal">
+                                        <i class="bi bi-plus-circle me-1"></i>Add Reminder
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div class="card-body">
@@ -375,7 +388,7 @@
                             <label for="activityClockIn" class="form-label">Clock In Time</label>
                             <input type="datetime-local" class="form-control" id="activityClockIn" required>
                         </div>
-                        <div class="mb-3" id="clockOutField" style="display: none;">
+                        <div class="mb-3" id="clockOutField">
                             <label for="activityClockOut" class="form-label">Clock Out Time</label>
                             <input type="datetime-local" class="form-control" id="activityClockOut">
                         </div>
@@ -1091,13 +1104,15 @@
                     <button type="button" class="btn btn-primary" id="updateTaskBtn">
                         <i class="bi bi-check-circle me-2"></i>Update Task
                     </button>
-                    <button type="button" class="btn btn-outline-info" id="addNoteBtn">
-                        <i class="bi bi-journal-plus me-2"></i>Add Note
-                    </button>
+                    <a href="#" class="btn btn-outline-info" id="seeNotesBtn">
+                        <i class="bi bi-journal-text me-2"></i>See Notes
+                    </a>
                 </div>
             </div>
         </div>
     </div>
+
+
 
     <script src="/static/js/dashboard.js?v=3.5"></script>
 

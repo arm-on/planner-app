@@ -680,3 +680,43 @@ html, body {
 .reminder-item.border-danger {
     background-color: rgba(220, 53, 69, 0.05);
 }
+
+/* Calendar Navigation Styles */
+.calendar-header {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.calendar-header .btn {
+    transition: all 0.2s ease;
+}
+
+.calendar-header .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.calendar-header .btn-outline-primary {
+    border-color: #3498db;
+    color: #3498db;
+}
+
+.calendar-header .btn-outline-primary:hover {
+    background-color: #3498db;
+    border-color: #3498db;
+    color: white;
+}
+
+.calendar-header .btn-outline-secondary {
+    border-color: #6c757d;
+    color: #6c757d;
+}
+
+.calendar-header .btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+

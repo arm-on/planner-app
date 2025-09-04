@@ -184,13 +184,20 @@ document.addEventListener('DOMContentLoaded', function() {
         return loadModels();
     }).then(async () => {
         await loadUserTimezone();
-        // Set filter to today by default
-        const userTz = userTimezone || 'Asia/Tehran';
-        const now = new Date();
-        const today = now.toLocaleDateString('en-CA', { timeZone: userTz });
-        currentFilter = 'date-range';
-        currentFilterParams = { start_date: today, end_date: today };
-        await loadActivitiesWithPagination();
+            // Set filter to today by default
+    const userTz = userTimezone || 'Asia/Tehran';
+    const now = new Date();
+    const today = now.toLocaleDateString('en-CA', { timeZone: userTz });
+    currentFilter = 'date-range';
+    currentFilterParams = { start_date: today, end_date: today };
+    
+    // Set the date input fields to today's date
+    const startDateInput = document.getElementById('scheduleStartDate');
+    const endDateInput = document.getElementById('scheduleEndDate');
+    if (startDateInput) startDateInput.value = today;
+    if (endDateInput) endDateInput.value = today;
+    
+    await loadActivitiesWithPagination();
     }).then(async () => {
         await checkForPlannedActivities();
     }).then(async () => {
@@ -1122,12 +1129,12 @@ startActivityBtn.addEventListener('click', async function() {
         // Set default clock in time to now
         setDefaultClockInTime();
         
-        // Hide clock out field by default
-        document.getElementById('clockOutField').style.display = 'none';
-        
         // Reset recurring fields
         document.getElementById('activityRecurring').checked = false;
         document.getElementById('recurringFields').style.display = 'none';
+        
+        // Update form fields to show proper visibility based on current status
+        updateActivityFormFields();
     } catch (error) {
         console.error('Error in startActivityBtn:', error);
         showToast('error', 'Error', `Error creating activity: ${error.message}`);
@@ -1150,6 +1157,9 @@ function updateActivityFormFields() {
     const clockInInput = document.getElementById('activityClockIn');
     const clockOutInput = document.getElementById('activityClockOut');
     
+    console.log('updateActivityFormFields called with status:', status);
+    console.log('clockOutField element:', clockOutField);
+    
     // Reset required attributes
     clockInInput.required = true;
     clockOutInput.required = false;
@@ -1157,6 +1167,7 @@ function updateActivityFormFields() {
     switch(status) {
         case 'PLANNED':
             // Show both clock in and clock out fields
+            console.log('PLANNED status: showing both fields');
             clockInField.style.display = 'block';
             clockOutField.style.display = 'block';
             clockInInput.required = true;
@@ -1165,6 +1176,7 @@ function updateActivityFormFields() {
             
         case 'DOING':
             // Show only clock in, set it to now
+            console.log('DOING status: hiding clock out field');
             clockInField.style.display = 'block';
             clockOutField.style.display = 'none';
             clockInInput.required = true;
@@ -1175,6 +1187,7 @@ function updateActivityFormFields() {
             
         case 'DONE':
             // Show both fields, both required
+            console.log('DONE status: showing both fields');
             clockInField.style.display = 'block';
             clockOutField.style.display = 'block';
             clockInInput.required = true;
@@ -1190,6 +1203,17 @@ setDefaultClockInTime();
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize activity form fields
     updateActivityFormFields();
+    
+    // Add specific handler for newActivityModal to ensure proper initialization
+    const newActivityModal = document.getElementById('newActivityModal');
+    if (newActivityModal) {
+        newActivityModal.addEventListener('shown.bs.modal', function() {
+            console.log('newActivityModal shown event triggered');
+            // Ensure form fields are properly initialized when modal opens
+            updateActivityFormFields();
+            setDefaultClockInTime();
+        });
+    }
 });
 
 // Toggle recurring fields visibility
@@ -2200,6 +2224,13 @@ async function editTask(taskId) {
             // Populate project select for edit modal
             populateEditProjectSelect();
             
+            // Set the href for the See Notes button with the actual task ID
+            const seeNotesBtn = document.getElementById('seeNotesBtn');
+            if (seeNotesBtn) {
+                seeNotesBtn.href = `/notes/timeline?task_id=${taskId}`;
+                console.log(`Set See Notes button href to: /notes/timeline?task_id=${taskId}`);
+            }
+            
             const modal = new bootstrap.Modal(document.getElementById('editTaskModal'));
             modal.show();
         } else {
@@ -3156,6 +3187,8 @@ async function loadCalendarActivities() {
             })));
             renderCalendar();
             loadUpcomingActivities();
+            // Load today's reminders when calendar is initialized
+            loadReminders();
         }
     } catch (error) {
         console.error('Error loading calendar activities:', error);
@@ -3322,8 +3355,49 @@ function goToToday() {
     const now = new Date();
     currentCalendarDate = new Date(now.toLocaleString('en-US', { timeZone: userTz }));
     renderCalendar();
+    
+    // Get today's date string in user's timezone
+    const todayStr = now.toLocaleDateString('en-CA', { timeZone: userTz });
+    
     // Reset schedule title to default
     document.getElementById('scheduleTitle').textContent = "Today's Schedule";
+    
+    // Update date range filters to today
+    document.getElementById('scheduleStartDate').value = todayStr;
+    document.getElementById('scheduleEndDate').value = todayStr;
+    
+    // Clear activity filters and update filter object
+    activityFilters = {
+        status: '',
+        task: '',
+        startDate: todayStr,
+        endDate: todayStr
+    };
+    
+    // Clear the filter form elements
+    const statusFilter = document.getElementById('activityStatusFilter');
+    const taskFilter = document.getElementById('activityTaskFilter');
+    if (statusFilter) statusFilter.value = '';
+    if (taskFilter) taskFilter.value = '';
+    
+    // Reset pagination
+    currentPage = 0;
+    
+    // Set filter type and load activities for today
+    currentFilter = 'date-range';
+    currentFilterParams = { start_date: todayStr, end_date: todayStr };
+    
+    // Clear scheduleData before loading new activities
+    scheduleData = [];
+    
+    // Load activities for today
+    loadActivitiesWithPagination();
+    
+    // Reset reminders to show today's reminders
+    resetRemindersToToday();
+    
+    // Show success message
+    showToast('success', 'Today', 'Showing today\'s activities and reminders');
 }
 
 // Select a date on the calendar
@@ -3378,6 +3452,12 @@ function selectCalendarDate(year, month, day) {
     console.log('About to load activities for date:', formattedDate);
     console.log('Current scheduleData before loading:', scheduleData);
     loadActivitiesWithPagination();
+    
+    // Load reminders for the selected date
+    loadRemindersForDate(formattedDate);
+    
+    // Update reminders section title to show the selected date
+    updateRemindersSectionTitle(formattedDate);
     
     // Create the display date string directly in the user's timezone
     // This avoids timezone conversion issues by formatting the date string directly
@@ -3472,12 +3552,107 @@ function clearReminderDateRange() {
     updateRemindersSectionTitle();
 }
 
+// Load reminders for a specific date
+async function loadRemindersForDate(dateStr) {
+    try {
+        const apiKey = localStorage.getItem('apiKey');
+        if (!apiKey) return;
+
+        const userTz = userTimezone || 'Asia/Tehran';
+        const url = `/reminders/date-range?start_date=${dateStr}&end_date=${dateStr}&timezone=${encodeURIComponent(userTz)}`;
+
+        console.log('Loading reminders for date:', dateStr, 'with URL:', url);
+
+        const response = await fetch(url, {
+            headers: {
+                'X-API-Key': apiKey
+            }
+        });
+
+        if (response.ok) {
+            remindersData = await response.json();
+            console.log('Loaded reminders for date:', dateStr, 'count:', remindersData.length);
+            displayReminders();
+            updateRemindersSectionTitle(dateStr);
+        } else {
+            console.error('Failed to load reminders for date:', response.status);
+        }
+    } catch (error) {
+        console.error('Error loading reminders for date:', error);
+    }
+}
+
+// Reset reminders to show today's reminders
+function resetRemindersToToday() {
+    // Clear any date range filters
+    document.getElementById('reminderStartDate').value = '';
+    document.getElementById('reminderEndDate').value = '';
+    reminderDateRange.start = null;
+    reminderDateRange.end = null;
+    
+    // Load today's reminders
+    loadReminders();
+    
+    // Update the section title back to "Today's Reminders"
+    document.getElementById('remindersSectionTitle').innerHTML = '<i class="bi bi-bell me-2"></i>Today\'s Reminders';
+    
+    // Also reset activities to show today's activities
+    const userTz = userTimezone || 'Asia/Tehran';
+    const now = new Date();
+    const todayStr = now.toLocaleDateString('en-CA', { timeZone: userTz });
+    
+    // Update date range filters to today
+    document.getElementById('scheduleStartDate').value = todayStr;
+    document.getElementById('scheduleEndDate').value = todayStr;
+    
+    // Clear activity filters and update filter object
+    activityFilters = {
+        status: '',
+        task: '',
+        startDate: todayStr,
+        endDate: todayStr
+    };
+    
+    // Clear the filter form elements
+    const statusFilter = document.getElementById('activityStatusFilter');
+    const taskFilter = document.getElementById('activityTaskFilter');
+    if (statusFilter) statusFilter.value = '';
+    if (taskFilter) taskFilter.value = '';
+    
+    // Reset pagination
+    currentPage = 0;
+    
+    // Set filter type and load activities for today
+    currentFilter = 'date-range';
+    currentFilterParams = { start_date: todayStr, end_date: todayStr };
+    
+    // Clear scheduleData before loading new activities
+    scheduleData = [];
+    
+    // Load activities for today
+    loadActivitiesWithPagination();
+    
+    // Reset schedule title to today
+    document.getElementById('scheduleTitle').textContent = "Today's Schedule";
+    
+    // Show success message
+    showToast('success', 'Reset', 'Showing today\'s activities and reminders');
+}
+
 // Display reminders in the UI
 async function displayReminders() {
     await ensureTasksForReminders(remindersData);
     const remindersList = document.getElementById('remindersList');
     if (remindersData.length === 0) {
-        remindersList.innerHTML = '<p class="text-muted text-center">No reminders for today</p>';
+        // Check if we're showing reminders for a specific date or today
+        const titleEl = document.getElementById('remindersSectionTitle');
+        const titleText = titleEl.textContent || titleEl.innerText;
+        
+        if (titleText.includes("Today's Reminders")) {
+            remindersList.innerHTML = '<p class="text-muted text-center">No reminders for today</p>';
+        } else {
+            remindersList.innerHTML = '<p class="text-muted text-center">No reminders for this date</p>';
+        }
         return;
     }
     let html = '';
@@ -4055,10 +4230,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
 window.applyReminderDateRange = applyReminderDateRange;
 window.clearReminderDateRange = clearReminderDateRange;
+window.resetRemindersToToday = resetRemindersToToday;
+window.previousMonth = previousMonth;
+window.nextMonth = nextMonth;
+window.goToToday = goToToday;
 
-function updateRemindersSectionTitle() {
+function updateRemindersSectionTitle(dateStr = null) {
     const titleEl = document.getElementById('remindersSectionTitle');
-    if (reminderDateRange.start && reminderDateRange.end) {
+    console.log('Updating reminders section title with dateStr:', dateStr);
+    
+    if (dateStr) {
+        // Format the date for display
+        const date = new Date(dateStr);
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayOfWeek = dayNames[date.getDay()];
+        const monthName = monthNames[date.getMonth()];
+        const day = date.getDate();
+        const year = date.getFullYear();
+        
+        // Check if it's today
+        const now = new Date();
+        const todayStr = now.toLocaleDateString('en-CA', { timeZone: userTimezone || 'Asia/Tehran' });
+        const selectedStr = date.toLocaleDateString('en-CA', { timeZone: userTimezone || 'Asia/Tehran' });
+        
+        console.log('Date comparison - todayStr:', todayStr, 'selectedStr:', selectedStr);
+        
+        if (selectedStr === todayStr) {
+            titleEl.innerHTML = '<i class="bi bi-bell me-2"></i>Today\'s Reminders';
+        } else {
+            titleEl.innerHTML = `<i class="bi bi-bell me-2"></i>Reminders for ${dayOfWeek}, ${monthName} ${day}, ${year}`;
+        }
+        
+        console.log('Updated title to:', titleEl.innerHTML);
+    } else if (reminderDateRange.start && reminderDateRange.end) {
         if (reminderDateRange.start === reminderDateRange.end) {
             titleEl.innerHTML = `<i class="bi bi-bell me-2"></i>Reminders for ${reminderDateRange.start}`;
         } else {
@@ -4323,12 +4529,12 @@ if (activityProjectSelect) {
     activityProjectSelect.addEventListener('change', populateTaskSelect);
 }
 
-// Add event listener for Add Note button in edit task modal
-document.getElementById('addNoteBtn').addEventListener('click', function() {
-    const taskId = document.getElementById('editTaskId').value;
-    if (taskId) {
-        window.open(`/notes/add-note?task_id=${taskId}`, '_blank');
-    }
-});
+
+
+
+
+
+
+
 
 

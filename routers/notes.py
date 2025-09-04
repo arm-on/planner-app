@@ -106,7 +106,7 @@ def timeline(request: Request, task_id: int, page: int = 1, page_size: int = 10,
             "id": note.id,
             "when": note.when,
             "when_local": convert_to_timezone(note.when, user_tz).strftime('%Y-%m-%d %H:%M'),
-            "task_id": note.task_id,
+            "task_id": note.id,
             "content": note.content,
             "attachments": attachments
         })

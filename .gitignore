@@ -1,0 +1,40 @@
+# Python bytecode
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+
+# Database files
+*.db
+*.sqlite3
+
+# Environment variables
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+
+# Uploads directory
+uploads/
