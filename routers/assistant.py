@@ -67,14 +67,14 @@ async def query_assistant(
                     {"role": "system", "content": query.system_prompt},
                     {"role": "user", "content": query.user_prompt}
                 ],
-                "max_tokens": 2000,
+                "max_tokens": 4000,
                 "temperature": 0.7
             }
         elif "anthropic" in model.base_url.lower() or "claude" in model.name.lower():
             # Anthropic Claude API
             payload = {
                 "model": model.name,
-                "max_tokens": 2000,
+                "max_tokens": 4000,
                 "temperature": 0.7,
                 "messages": [
                     {"role": "user", "content": f"{query.system_prompt}\n\n{query.user_prompt}"}
@@ -88,7 +88,7 @@ async def query_assistant(
                     {"role": "system", "content": query.system_prompt},
                     {"role": "user", "content": query.user_prompt}
                 ],
-                "max_tokens": 2000,
+                "max_tokens": 4000,
                 "temperature": 0.7
             }
 
@@ -99,8 +99,14 @@ async def query_assistant(
                 "Content-Type": "application/json"
             }
             
+            # Determine the correct endpoint based on the base URL
+            if model.base_url.endswith('/v1'):
+                endpoint = f"{model.base_url}/chat/completions"
+            else:
+                endpoint = f"{model.base_url}/v1/chat/completions"
+            
             response = await client.post(
-                f"{model.base_url}/v1/chat/completions",
+                endpoint,
                 headers=headers,
                 json=payload,
                 timeout=60.0
@@ -117,8 +123,13 @@ async def query_assistant(
                 # Extract the response text based on the API format
                 if "choices" in result and len(result["choices"]) > 0:
                     response_text = result["choices"][0]["message"]["content"]
+                    # Handle null content (when response is cut off due to token limits)
+                    if response_text is None:
+                        response_text = "Response was cut off due to token limits. Please try with a shorter prompt or break your request into smaller parts."
                 elif "content" in result:
                     response_text = result["content"]
+                    if response_text is None:
+                        response_text = "Response was cut off due to token limits. Please try with a shorter prompt or break your request into smaller parts."
                 else:
                     response_text = str(result)
                 
@@ -132,11 +143,14 @@ async def query_assistant(
                     pass
                 
                 print(f"DEBUG: API Error: {error_detail}")
-                return {"error": f"AI API error: {error_detail}"}
+                raise HTTPException(status_code=500, detail=f"AI API error: {error_detail}")
 
     except httpx.RequestError as e:
         print(f"DEBUG: Network error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Network error: {str(e)}")
+    except HTTPException:
+        # Re-raise HTTPExceptions as they are already properly formatted
+        raise
     except Exception as e:
         print(f"DEBUG: Internal error: {str(e)}")
         print(f"DEBUG: Error type: {type(e)}")

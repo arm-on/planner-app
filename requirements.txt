@@ -21,6 +21,13 @@ httpx==0.25.2
 # Form Data Processing
 python-multipart==0.0.6
 
+# LangChain and Agentic AI
+langchain==0.1.0
+langchain-community==0.0.10
+langchain-core==0.1.0
+langgraph==0.0.20
+langsmith==0.0.70
+
 # Additional dependencies for email validation
 email-validator==2.1.0
 

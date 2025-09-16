@@ -16,6 +16,7 @@ from routers import activity as activity_router
 from routers import reports as reports_router
 from routers import reminders as reminders_router
 from routers import assistant as assistant_router
+from routers import agentic_assistant as agentic_router
 from routers.notes import router as notes_router
 from core.database import engine, Base, get_db
 from models import user, projects, models, keys, tasks, progress, reminders
@@ -45,6 +46,7 @@ app.include_router(activity_router.router)
 app.include_router(reports_router.router)
 app.include_router(reminders_router.router)
 app.include_router(assistant_router.router)
+app.include_router(agentic_router.router)
 app.include_router(notes_router)
 
 @app.get("/", response_class=HTMLResponse)
