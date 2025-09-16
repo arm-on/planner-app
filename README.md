@@ -107,7 +107,7 @@ planner-app/
 
 ## Credits
 
-**Planner App** was created by [Arman Malekzadeh](https://github.com/armanmalekzadeh).
+**Planner App** was created by [Arman Malekzadeh](https://github.com/arm-on).
 
 ---
 
