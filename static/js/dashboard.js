@@ -944,7 +944,6 @@ document.getElementById('clockOutBtn').addEventListener('click', async function(
             currentActivity = null;
             document.getElementById('currentActivityInfo').innerHTML = `
                 <p class="mb-1">No active activity</p>
-                <small>Click "Clock In" to start tracking your work</small>
             `;
             document.getElementById('currentTime').textContent = '--:--';
             document.getElementById('startTime').textContent = '--:--';
@@ -4528,7 +4527,6 @@ const activityProjectSelect = document.getElementById('activityProject');
 if (activityProjectSelect) {
     activityProjectSelect.addEventListener('change', populateTaskSelect);
 }
-
 
 
 

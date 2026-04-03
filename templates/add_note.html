@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block head %}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+    <link rel="stylesheet" href="/static/vendor/easymde/easymde.min.css">
     <style>
         .add-note-header {
             display: flex;
@@ -52,10 +52,11 @@
         </form>
     </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+<script src="/static/vendor/easymde/easymde.min.js"></script>
 <script>
     var easyMDE = new EasyMDE({
         element: document.getElementById("content"),
+        autoDownloadFontAwesome: false,
         spellChecker: false,
         status: false,
         minHeight: "250px",
@@ -66,7 +67,7 @@
             "link", {
                 name: "image",
                 action: EasyMDE.drawImage,
-                className: "fa fa-image",
+                className: "bi bi-image",
                 title: "Insert Image"
             }, "|",
             "preview", "side-by-side", "fullscreen"

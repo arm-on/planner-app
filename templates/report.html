@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reports - Planner App</title>
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/static/vendor/bootstrap-icons/css/bootstrap-icons.css" rel="stylesheet">
     <!-- Chart.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.3.0/chart.umd.min.js"></script>
+    <script src="/static/vendor/chartjs/chart.umd.min.js"></script>
     <style>
         body {
             background: linear-gradient(135deg, #e5f2ff 0%, #ffffff 100%);
@@ -307,7 +307,133 @@
         .text-danger {
             color: #e74c3c !important;
         }
+
+        /* Dashboard theme alignment */
+        :root {
+            --theme-surface: rgba(255, 255, 255, 0.88);
+            --theme-text: #172033;
+            --theme-muted: #637089;
+            --theme-border: #d7e2f3;
+            --theme-brand: #1463ff;
+            --theme-shadow: 0 22px 45px -25px rgba(22, 50, 98, 0.45);
+        }
+        body {
+            color: var(--theme-text) !important;
+            font-family: "Manrope", "Segoe UI", sans-serif !important;
+            background:
+                radial-gradient(circle at 8% 5%, #d8e7ff 0%, transparent 32%),
+                radial-gradient(circle at 92% 18%, #dbfff8 0%, transparent 30%),
+                linear-gradient(160deg, #eef3fb 0%, #f9fbff 42%, #f2f8ff 100%) !important;
+        }
+        .report-header {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 100 !important;
+            background: rgba(244, 249, 255, 0.78) !important;
+            backdrop-filter: blur(14px) !important;
+            border-bottom: 1px solid rgba(140, 164, 204, 0.32) !important;
+            box-shadow: none !important;
+        }
+        .header-logo {
+            border-radius: 16px !important;
+            background: linear-gradient(145deg, var(--theme-brand), #4a89ff) !important;
+            box-shadow: 0 14px 20px -14px rgba(20, 99, 255, 0.9) !important;
+        }
+        .header-title {
+            color: #0f1f39 !important;
+            font-family: "Space Grotesk", "Manrope", sans-serif !important;
+            letter-spacing: -0.02em !important;
+        }
+        .header-subtitle {
+            color: var(--theme-muted) !important;
+        }
+        .header-user-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.38rem;
+            margin-top: 0.45rem;
+            padding: 0.28rem 0.6rem;
+            border: 1px solid var(--theme-border);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.78);
+            color: #334766;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+        .header-user-chip i {
+            color: var(--theme-brand);
+        }
+        .nav-btn {
+            border-radius: 999px !important;
+            border: 1px solid var(--theme-border) !important;
+            background: rgba(255, 255, 255, 0.82) !important;
+            color: #1a2a45 !important;
+            box-shadow: 0 12px 28px -18px rgba(22, 50, 98, 0.35) !important;
+        }
+        .menu-toggle {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 1px solid var(--theme-border);
+            background: rgba(255, 255, 255, 0.85);
+            color: #1a2a45;
+        }
+        .top-menu-collapse {
+            display: block;
+        }
+        .timezone-btn { background: linear-gradient(145deg, #fbfcff, #eff5ff) !important; }
+        .reports-btn { background: linear-gradient(145deg, #edf4ff, #dfefff) !important; }
+        .assistant-btn { background: linear-gradient(145deg, #edfffb, #e2fdf5) !important; }
+        .kanban-btn { background: linear-gradient(145deg, #fff5ea, #ffedd4) !important; }
+        .logout-btn { background: linear-gradient(145deg, #fff0f3, #ffe3ea) !important; }
+        .welcome-container {
+            border: 1px solid var(--theme-border) !important;
+            border-radius: 999px !important;
+            background: rgba(255, 255, 255, 0.82) !important;
+            box-shadow: 0 12px 28px -18px rgba(22, 50, 98, 0.35) !important;
+        }
+        .card {
+            border: 1px solid rgba(199, 216, 242, 0.8) !important;
+            border-radius: 18px !important;
+            background: var(--theme-surface) !important;
+            box-shadow: var(--theme-shadow) !important;
+        }
+        .btn {
+            border-radius: 12px !important;
+            font-weight: 700 !important;
+        }
+        @media (max-width: 768px) {
+            .header-nav {
+                width: 100% !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                margin-top: 0.8rem !important;
+            }
+            .menu-toggle {
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+            }
+            .top-menu-collapse {
+                width: 100%;
+            }
+            .top-menu-collapse .nav-buttons {
+                width: 100%;
+                margin-top: 0.65rem;
+                justify-content: flex-start !important;
+            }
+            .top-menu-collapse .nav-btn {
+                width: 100%;
+                justify-content: flex-start !important;
+            }
+            .header-user-chip {
+                font-size: 0.74rem;
+            }
+        }
     </style>
+    <link rel="stylesheet" href="/static/css/theme.css?v=1.0">
+    <script src="/static/js/theme.js?v=1.0" defer></script>
 </head>
 <body>
     <!-- Header -->
@@ -322,47 +448,44 @@
                         <div>
                             <div class="header-title">Time Reports</div>
                             <div class="header-subtitle">Analytics & Insights</div>
+                            <div class="header-user-chip">
+                                <i class="bi bi-person-circle"></i>
+                                <span class="header-user-name" id="userName"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="header-nav">
-                        <div class="nav-buttons">
-                            <a href="/dashboard" class="nav-btn dashboard-btn" title="Go to Dashboard">
-                                <i class="bi bi-house"></i>
-                                <span class="btn-text">Dashboard</span>
-                            </a>
-                            <a href="/assistant" class="nav-btn assistant-btn" title="AI Assistant">
-                                <i class="bi bi-robot"></i>
-                                <span class="btn-text">Assistant</span>
-                            </a>
-                            <a href="/kanban" class="nav-btn kanban-btn" title="Kanban Board">
-                                <i class="bi bi-columns-gap"></i>
-                                <span class="btn-text">Kanban</span>
-                            </a>
-                            <button class="nav-btn timezone-btn" onclick="openTimezoneSettings()" title="Change Timezone">
-                                <i class="bi bi-gear"></i>
-                                <span class="btn-text">Timezone</span>
-                            </button>
-                            <a href="#" onclick="logout()" class="nav-btn logout-btn" title="Logout">
-                                <i class="bi bi-box-arrow-right"></i>
-                                <span class="btn-text">Logout</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Welcome Message Row -->
-            <div class="row">
-                <div class="col-12">
-                    <div class="welcome-message-row">
-                        <div class="welcome-container">
-                            <div class="welcome-icon">
-                                <i class="bi bi-person-circle"></i>
-                            </div>
-                            <div class="welcome-text">
-                                <span class="welcome-greeting">Welcome back, </span>
-                                <span class="user-name" id="userName"></span>
+                        <button class="menu-toggle d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#reportTopMenu" aria-controls="reportTopMenu" aria-expanded="false" aria-label="Toggle navigation">
+                            <i class="bi bi-list"></i>
+                        </button>
+                        <div class="collapse d-md-block top-menu-collapse" id="reportTopMenu">
+                            <div class="nav-buttons">
+                                <button class="nav-btn timezone-btn" onclick="openTimezoneSettings()" title="Change Timezone">
+                                    <i class="bi bi-gear"></i>
+                                    <span class="btn-text">Timezone</span>
+                                </button>
+                                <a href="/dashboard" class="nav-btn dashboard-btn" title="Dashboard">
+                                    <i class="bi bi-house-door"></i>
+                                    <span class="btn-text">Dashboard</span>
+                                </a>
+                                <a href="/reports" class="nav-btn reports-btn" title="View Reports">
+                                    <i class="bi bi-graph-up"></i>
+                                    <span class="btn-text">Reports</span>
+                                </a>
+                                <a href="/assistant" class="nav-btn assistant-btn" title="AI Assistant">
+                                    <i class="bi bi-robot"></i>
+                                    <span class="btn-text">Assistant</span>
+                                </a>
+                                <a href="/kanban" class="nav-btn kanban-btn" title="Kanban Board">
+                                    <i class="bi bi-columns-gap"></i>
+                                    <span class="btn-text">Kanban</span>
+                                </a>
+                                <a href="#" onclick="logout()" class="nav-btn logout-btn" title="Logout">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                    <span class="btn-text">Logout</span>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -552,7 +675,7 @@
     </div>
 
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     
     <script>
         let reportData = null;

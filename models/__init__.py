@@ -7,3 +7,4 @@ from .user import User
 from .models import Model
 from .reminders import Reminder
 from .keys import Key
+from .assistant_events import AssistantEvent

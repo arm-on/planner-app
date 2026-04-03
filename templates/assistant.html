@@ -3,686 +3,548 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Assistant - Planner App</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    
-    <!-- Marked.js for Markdown rendering -->
-    <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+    <title>Smart Assistant - Planner App</title>
+    <link href="/static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/vendor/bootstrap-icons/css/bootstrap-icons.css" rel="stylesheet">
+    <script src="/static/vendor/marked/marked.min.js"></script>
     <style>
-        body {
-            background: linear-gradient(135deg, #e5f2ff 0%, #ffffff 100%);
-            min-height: 100vh;
-        }
-        
-        .assistant-header {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(15px);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        :root {
+            --surface: rgba(255, 255, 255, 0.9);
+            --text: #172033;
+            --muted: #637089;
+            --border: #d7e2f3;
+            --brand: #1463ff;
+            --brand-2: #00a8a1;
+            --shadow-lg: 0 22px 45px -25px rgba(22, 50, 98, 0.45);
+            --shadow-md: 0 12px 28px -18px rgba(22, 50, 98, 0.35);
         }
 
-        /* Header Logo */
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Manrope", "Segoe UI", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 8% 5%, #d8e7ff 0%, transparent 32%),
+                radial-gradient(circle at 92% 18%, #dbfff8 0%, transparent 30%),
+                linear-gradient(160deg, #eef3fb 0%, #f9fbff 42%, #f2f8ff 100%);
+        }
+
+        .assistant-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(244, 249, 255, 0.78);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(140, 164, 204, 0.32);
+        }
+
         .header-logo {
-            width: 50px !important;
-            height: 50px !important;
-            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%) !important;
-            border-radius: 12px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            color: white !important;
-            font-size: 1.5rem !important;
-            box-shadow: 0 4px 15px rgba(155, 89, 182, 0.3) !important;
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            display: grid;
+            place-items: center;
+            font-size: 1.45rem;
+            color: #fff;
+            background: linear-gradient(145deg, var(--brand), #4a89ff);
+            box-shadow: 0 14px 20px -14px rgba(20, 99, 255, 0.9);
         }
 
         .header-title {
-            color: #2c3e50 !important;
-            font-weight: 600 !important;
-            font-size: 1.5rem !important;
-        }
-
-        .header-subtitle {
-            font-size: 0.85rem !important;
-            color: #7f8c8d !important;
-        }
-
-        /* Header Navigation */
-        .header-nav {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: flex-end !important;
-            gap: 1rem !important;
-        }
-
-        .nav-buttons {
-            display: flex !important;
-            gap: 0.5rem !important;
-            align-items: center !important;
-        }
-
-        .nav-btn {
-            display: flex !important;
-            align-items: center !important;
-            gap: 0.5rem !important;
-            padding: 0.6rem 1rem !important;
-            border: none !important;
-            border-radius: 10px !important;
-            background: rgba(255, 255, 255, 0.8) !important;
-            color: #2c3e50 !important;
-            text-decoration: none !important;
-            font-size: 0.9rem !important;
-            font-weight: 500 !important;
-            transition: all 0.3s ease !important;
-            backdrop-filter: blur(10px) !important;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
-        }
-
-        .nav-btn:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
-            text-decoration: none !important;
-        }
-
-        .nav-btn i {
-            font-size: 1rem !important;
-        }
-
-        .btn-text {
-            display: inline !important;
-        }
-
-        /* Specific button styles */
-        .timezone-btn {
-            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%) !important;
-            color: white !important;
-        }
-
-        .timezone-btn:hover {
-            background: linear-gradient(135deg, #7f8c8d 0%, #6c7b7d 100%) !important;
-            color: white !important;
-        }
-
-        .dashboard-btn {
-            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%) !important;
-            color: white !important;
-        }
-
-        .dashboard-btn:hover {
-            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%) !important;
-            color: white !important;
-        }
-
-        .reports-btn {
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
-            color: white !important;
-        }
-
-        .reports-btn:hover {
-            background: linear-gradient(135deg, #2980b9 0%, #21618c 100%) !important;
-            color: white !important;
-        }
-
-        .logout-btn {
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
-            color: white !important;
-        }
-
-        .logout-btn:hover {
-            background: linear-gradient(135deg, #c0392b 0%, #a93226 100%) !important;
-            color: white !important;
-        }
-
-        /* Welcome Message Row */
-        .welcome-message-row {
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
-            padding: 0.5rem 0 !important;
-            border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
-        }
-
-        .welcome-container {
-            display: flex !important;
-            align-items: center !important;
-            gap: 0.75rem !important;
-            background: rgba(255, 255, 255, 0.9) !important;
-            padding: 0.5rem 1rem !important;
-            border-radius: 15px !important;
-            backdrop-filter: blur(10px) !important;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
-            transition: all 0.3s ease !important;
-        }
-
-        .welcome-container:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
-        }
-
-        .welcome-icon {
-            width: 30px !important;
-            height: 30px !important;
-            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%) !important;
-            border-radius: 50% !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            color: white !important;
-            font-size: 1rem !important;
-        }
-
-        .welcome-text {
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-        }
-
-        .welcome-greeting {
-            color: #7f8c8d !important;
-            font-size: 0.9rem !important;
-        }
-
-        .user-name {
-            color: #2c3e50 !important;
-            font-weight: 700 !important;
-            font-size: 1.2rem !important;
-            display: block !important;
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important;
-            -webkit-background-clip: text !important;
-            -webkit-text-fill-color: transparent !important;
-            background-clip: text !important;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .header-nav {
-                justify-content: center !important;
-                margin-top: 1rem !important;
-            }
-
-            .nav-buttons {
-                flex-wrap: wrap !important;
-                justify-content: center !important;
-            }
-
-            .welcome-container {
-                flex-direction: column !important;
-                text-align: center !important;
-                padding: 0.5rem !important;
-            }
-
-            .welcome-text {
-                align-items: center !important;
-                flex-direction: row !important;
-            }
-        }
-        
-        .main-content {
-            padding: 2rem 0;
-        }
-        
-        .card {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(15px);
-            border: none;
-            border-radius: 20px;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
-            margin-bottom: 1.5rem;
-        }
-        
-        .prompt-textarea {
-            min-height: 200px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            line-height: 1.4;
-        }
-        
-        .response-box {
-            min-height: 300px;
-            max-height: 600px;
-            overflow-y: auto;
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
-            padding: 1rem;
-            font-family: 'Courier New', monospace;
-            white-space: pre-wrap;
-        }
-        
-        .btn-send {
-            border-radius: 25px;
-            padding: 0.75rem 2rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            border-width: 2px;
-        }
-        
-        .btn-send:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        }
-        
-        .btn-outline-primary {
-            border-color: #3498db;
-            color: #3498db;
-        }
-        
-        .btn-outline-primary:hover {
-            background-color: #3498db;
-            border-color: #3498db;
-            color: white;
-        }
-        
-        .text-primary {
-            color: #3498db !important;
-        }
-        
-        .text-danger {
-            color: #e74c3c !important;
-        }
-        
-        .loading {
-            display: none;
-        }
-        
-        .spinner-border-sm {
-            width: 1rem;
-            height: 1rem;
-        }
-        
-        .model-selector {
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 15px;
-            padding: 1.5rem;
-        }
-        
-        .agent-icon {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transition: transform 0.2s ease;
-        }
-        
-        .agent-icon:hover {
-            transform: scale(1.05);
-        }
-        
-        .tools-section, .reasoning-section {
-            padding: 0.5rem;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.7);
-            border: 1px solid rgba(0, 0, 0, 0.05);
-        }
-        
-        /* Clean agentic mode styling */
-        .ai-response-container.agentic-mode {
-            border: 1px solid #e9ecef;
-            border-radius: 12px;
-            background: #ffffff;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-        
-        .agent-badge .badge {
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-        
-        .agent-details {
-            border-top: 1px solid #f1f3f4;
-            padding-top: 1rem;
-        }
-        
-        .agent-details .btn {
-            border: 1px solid #dee2e6;
-            color: #6c757d;
-            font-size: 0.85rem;
-            padding: 0.375rem 0.75rem;
-        }
-        
-        .agent-details .btn:hover {
-            background-color: #f8f9fa;
-            border-color: #adb5bd;
-        }
-        
-        .agent-detail-section {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .agent-detail-section h6 {
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        
-        .tools-list .badge {
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
-        }
-        
-        .collapse .btn[aria-expanded="true"] .bi-chevron-down {
-            transform: rotate(180deg);
-        }
-        
-        .collapse .btn .bi-chevron-down {
-            transition: transform 0.2s ease;
-        }
-        
-        .agent-info-card {
-            border-left: 4px solid;
-            transition: all 0.3s ease;
-        }
-        
-        .agent-info-card.planning {
-            border-left-color: #28a745;
-        }
-        
-        .agent-info-card.analytics {
-            border-left-color: #17a2b8;
-        }
-        
-        .agent-info-card.advisor {
-            border-left-color: #ffc107;
-        }
-        
-        .agent-info-card.general {
-            border-left-color: #007bff;
-        }
-        
-        .ai-response-container {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            border-radius: 15px;
-            border: 1px solid rgba(0, 0, 0, 0.08);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-            margin-top: 1rem;
-            transition: all 0.3s ease;
-        }
-        
-        .ai-response-container:hover {
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-            transform: translateY(-2px);
-        }
-        
-        .ai-response-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .ai-response-header.traditional-mode {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        }
-        
-        .ai-response-header.error-header {
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-        }
-        
-        .ai-icon {
-            width: 50px;
-            height: 50px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            font-family: "Space Grotesk", "Manrope", sans-serif;
+            letter-spacing: -0.02em;
+            color: #0f1f39;
             font-size: 1.5rem;
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-        }
-        
-        .ai-response-header h5 {
-            color: white !important;
-            font-size: 1.4rem;
             font-weight: 700;
             margin: 0;
         }
-        
-        .ai-response-header small {
-            color: rgba(255, 255, 255, 0.9) !important;
+
+        .header-subtitle {
+            color: var(--muted);
             font-size: 0.9rem;
         }
-        
-        .response-status {
-            display: flex;
+
+        .header-user-chip {
+            display: inline-flex;
             align-items: center;
-        }
-        
-        .response-status .badge {
-            font-size: 0.85rem;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-weight: 600;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        }
-        
-        .ai-response-content {
-            padding: 2rem;
-            line-height: 1.7;
-            font-size: 1rem;
-            color: #2c3e50;
-        }
-        
-        .ai-response-content h1,
-        .ai-response-content h2,
-        .ai-response-content h3,
-        .ai-response-content h4,
-        .ai-response-content h5,
-        .ai-response-content h6 {
-            color: #2c3e50;
-            margin-top: 1.5rem;
-            margin-bottom: 1rem;
-            font-weight: 600;
-        }
-        
-        .ai-response-content h1:first-child,
-        .ai-response-content h2:first-child,
-        .ai-response-content h3:first-child,
-        .ai-response-content h4:first-child,
-        .ai-response-content h5:first-child,
-        .ai-response-content h6:first-child {
-            margin-top: 0;
-        }
-        
-        .ai-response-content ul,
-        .ai-response-content ol {
-            padding-left: 1.5rem;
-            margin-bottom: 1rem;
-        }
-        
-        .ai-response-content li {
-            margin-bottom: 0.5rem;
-        }
-        
-        .ai-response-content p {
-            margin-bottom: 1rem;
-        }
-        
-        .ai-response-content strong {
-            color: #34495e;
-            font-weight: 600;
-        }
-        
-        .ai-response-content code {
-            background: #f1f3f4;
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            font-size: 0.9rem;
-            color: #e74c3c;
-        }
-        
-        .ai-response-content pre {
-            background: #2c3e50;
-            color: #ecf0f1;
-            padding: 1rem;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 1rem 0;
-        }
-        
-        .ai-response-content pre code {
-            background: none;
-            color: inherit;
-            padding: 0;
-        }
-        
-        .ai-response-content blockquote {
-            border-left: 4px solid #3498db;
-            padding-left: 1rem;
-            margin: 1rem 0;
-            font-style: italic;
-            color: #7f8c8d;
-        }
-        
-        .ai-response-content table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1rem 0;
-        }
-        
-        .ai-response-content th,
-        .ai-response-content td {
-            padding: 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid #ecf0f1;
-        }
-        
-        .ai-response-content th {
-            background: #f8f9fa;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        
-        /* Markdown-specific styling */
-        .ai-response-content h1,
-        .ai-response-content h2,
-        .ai-response-content h3,
-        .ai-response-content h4,
-        .ai-response-content h5,
-        .ai-response-content h6 {
-            color: #2c3e50;
-            margin-top: 1.5rem;
-            margin-bottom: 1rem;
-            font-weight: 600;
-            border-bottom: 1px solid #ecf0f1;
-            padding-bottom: 0.5rem;
-        }
-        
-        .ai-response-content h1:first-child,
-        .ai-response-content h2:first-child,
-        .ai-response-content h3:first-child,
-        .ai-response-content h4:first-child,
-        .ai-response-content h5:first-child,
-        .ai-response-content h6:first-child {
-            margin-top: 0;
-        }
-        
-        .ai-response-content strong {
-            color: #34495e;
+            gap: 0.38rem;
+            margin-top: 0.45rem;
+            padding: 0.28rem 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.78);
+            color: #334766;
+            font-size: 0.8rem;
             font-weight: 700;
         }
-        
-        .ai-response-content em {
-            color: #7f8c8d;
-            font-style: italic;
+
+        .header-user-chip i {
+            color: var(--brand);
         }
-        
-        .ai-response-content ul,
-        .ai-response-content ol {
-            padding-left: 1.5rem;
-            margin-bottom: 1rem;
+
+        .header-nav,
+        .nav-buttons {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 0.55rem;
+            flex-wrap: wrap;
         }
-        
-        .ai-response-content li {
-            margin-bottom: 0.5rem;
+
+        .menu-toggle {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.85);
+            color: #1a2a45;
+        }
+
+        .top-menu-collapse {
+            display: block;
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            padding: 0.45rem 0.85rem;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-decoration: none;
+            color: #1a2a45;
+            background: rgba(255, 255, 255, 0.82);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: #b9ccec;
+            color: #0f1f39;
+        }
+
+        .btn-text {
+            display: inline;
+        }
+
+        .timezone-btn { background: linear-gradient(145deg, #fbfcff, #eff5ff); }
+        .dashboard-btn { background: linear-gradient(145deg, #eff7ff, #e1eeff); }
+        .reports-btn { background: linear-gradient(145deg, #edf4ff, #dfefff); }
+        .assistant-btn { background: linear-gradient(145deg, #edfffb, #e2fdf5); }
+        .kanban-btn { background: linear-gradient(145deg, #fff5ea, #ffedd4); }
+        .logout-btn { background: linear-gradient(145deg, #fff0f3, #ffe3ea); }
+
+        .main-content {
+            padding: 1.6rem 0 2.6rem;
+        }
+
+        .panel {
+            border: 1px solid rgba(199, 216, 242, 0.8);
+            border-radius: 18px;
+            background: var(--surface);
+            box-shadow: var(--shadow-lg);
+            padding: 1rem;
+            height: 100%;
+        }
+
+        .panel-title {
+            font-family: "Space Grotesk", "Manrope", sans-serif;
+            font-weight: 700;
+            font-size: 1.05rem;
+            margin-bottom: 0.8rem;
+            color: #102447;
+        }
+
+        .smart-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.7rem;
+        }
+
+        .smart-card {
+            border: 1px solid #d9e7fb;
+            border-radius: 14px;
+            padding: 0.7rem;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .smart-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #143466;
+            line-height: 1.05;
+        }
+
+        .smart-label {
+            font-size: 0.8rem;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .smart-spotlights {
+            margin-top: 0.8rem;
+            display: grid;
+            gap: 0.55rem;
+        }
+
+        .spotlight-block {
+            border: 1px solid #d9e7fb;
+            border-radius: 12px;
+            padding: 0.55rem 0.65rem;
+            background: rgba(252, 254, 255, 0.94);
+        }
+
+        .spotlight-title {
+            font-size: 0.76rem;
+            font-weight: 800;
+            color: #2f4f7e;
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .spotlight-items {
+            margin: 0;
+            padding-left: 1rem;
+            color: #335077;
+            font-size: 0.8rem;
+        }
+
+        .quick-prompts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+        }
+
+        .prompt-pill {
+            border: 1px solid #c5dafe;
+            background: #f4f8ff;
+            color: #22406f;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 0.32rem 0.7rem;
+            cursor: pointer;
+        }
+
+        .form-label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #345175;
+            margin-bottom: 0.3rem;
+        }
+
+        .form-control,
+        .form-select {
+            border-radius: 12px;
+            border-color: #d1dff2;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #78a8ff;
+            box-shadow: 0 0 0 0.2rem rgba(20, 99, 255, 0.14);
+        }
+
+        #userPrompt {
+            min-height: 160px;
+        }
+
+        #systemPrompt {
+            min-height: 120px;
+        }
+
+        .response-wrap {
+            border: 1px solid #d8e6fb;
+            border-radius: 14px;
+            background: #fbfdff;
+            min-height: 340px;
+            max-height: 68vh;
+            overflow: auto;
+            padding: 0.9rem;
+        }
+
+        .response-empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #667c9e;
+            height: 300px;
+            font-weight: 600;
+        }
+
+        .response-meta {
+            border-bottom: 1px dashed #d3e3fa;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.6rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .badge-soft {
+            background: #ecf4ff;
+            color: #214675;
+            border: 1px solid #c6ddff;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            padding: 0.24rem 0.55rem;
+        }
+
+        .response-content {
+            color: #1f3353;
             line-height: 1.6;
         }
-        
-        .ai-response-content p {
-            margin-bottom: 1rem;
-            line-height: 1.7;
+
+        .response-content h1,
+        .response-content h2,
+        .response-content h3 {
+            font-family: "Space Grotesk", "Manrope", sans-serif;
+            margin-top: 1rem;
         }
-        
-        .ai-response-content blockquote {
-            border-left: 4px solid #3498db;
-            padding-left: 1rem;
-            margin: 1rem 0;
-            font-style: italic;
-            color: #7f8c8d;
-            background: #f8f9fa;
-            padding: 1rem;
-            border-radius: 4px;
+
+        .response-content pre {
+            background: #eff5ff;
+            border: 1px solid #d3e2fa;
+            border-radius: 10px;
+            padding: 0.7rem;
+            overflow: auto;
         }
-        
-        .ai-response-content hr {
-            border: none;
-            height: 2px;
-            background: linear-gradient(to right, #3498db, #ecf0f1);
-            margin: 2rem 0;
+
+        .btn-run {
+            border-radius: 12px;
+            font-weight: 800;
+            padding: 0.62rem 1rem;
+        }
+
+        .btn-stop {
+            border-radius: 12px;
+            font-weight: 800;
+            padding: 0.62rem 1rem;
+        }
+
+        .thinking {
+            color: #5f7598;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .tiny {
+            font-size: 0.77rem;
+            color: #6a7d9a;
+        }
+
+        .control-actions {
+            display: grid;
+            gap: 0.5rem;
+            margin-top: 0.85rem;
+        }
+
+        .mode-switch {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.45rem;
+            margin-bottom: 0.7rem;
+        }
+
+        .mode-btn {
+            border: 1px solid #cde0ff;
+            background: #f5f9ff;
+            color: #22406e;
+            border-radius: 10px;
+            padding: 0.42rem 0.6rem;
+            font-size: 0.79rem;
+            font-weight: 800;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(145deg, #1f73ff, #1862dd);
+            color: #fff;
+            border-color: #1b66e6;
+        }
+
+        .simple-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .simple-action-btn {
+            border: 1px solid #cde0ff;
+            background: #f7faff;
+            color: #20406f;
+            border-radius: 11px;
+            padding: 0.55rem 0.65rem;
+            text-align: left;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .response-actions {
+            margin-top: 0.85rem;
+            border-top: 1px dashed #d1e2fb;
+            padding-top: 0.75rem;
+        }
+
+        .response-actions-title {
+            font-size: 0.82rem;
+            font-weight: 800;
+            color: #2f4e7d;
+            margin-bottom: 0.45rem;
+        }
+
+        .suggested-actions {
+            margin-bottom: 0.65rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .suggested-btn {
+            border: 1px solid #c8defd;
+            background: linear-gradient(145deg, #eef6ff, #e7f2ff);
+            color: #23436e;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 0.32rem 0.62rem;
+        }
+
+        .response-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.45rem;
+        }
+
+        .action-chip {
+            border: 1px solid #cce0ff;
+            background: linear-gradient(145deg, #f4f8ff, #edf4ff);
+            color: #1d426f;
+            border-radius: 10px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 0.45rem 0.55rem;
+            text-align: left;
+        }
+
+        .response-actions-forms {
+            margin-top: 0.55rem;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.55rem;
+        }
+
+        .action-form {
+            border: 1px solid #d9e7fb;
+            border-radius: 11px;
+            padding: 0.55rem;
+            background: rgba(255, 255, 255, 0.82);
+        }
+
+        .action-form .form-control {
+            font-size: 0.78rem;
+            padding: 0.35rem 0.5rem;
+            border-radius: 9px;
+        }
+
+        .action-form .btn {
+            margin-top: 0.4rem;
+            width: 100%;
+            font-size: 0.76rem;
+            font-weight: 700;
+        }
+
+        @media (max-width: 768px) {
+            .header-nav {
+                width: 100%;
+                justify-content: space-between;
+                margin-top: 0.8rem;
+            }
+
+            .menu-toggle {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .top-menu-collapse {
+                width: 100%;
+            }
+
+            .top-menu-collapse .nav-buttons {
+                width: 100%;
+                margin-top: 0.65rem;
+                justify-content: flex-start;
+            }
+
+            .top-menu-collapse .nav-btn {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .smart-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .response-actions-grid,
+            .response-actions-forms {
+                grid-template-columns: 1fr;
+            }
+
+            .mode-switch,
+            .simple-actions {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
+    <link rel="stylesheet" href="/static/css/theme.css?v=1.0">
+    <script src="/static/js/theme.js?v=1.0" defer></script>
 </head>
 <body>
-    <!-- Header -->
     <header class="assistant-header">
         <div class="container">
-            <div class="row align-items-center py-3">
+            <div class="row align-items-center py-4">
                 <div class="col-md-6">
                     <div class="d-flex align-items-center">
-                        <div class="header-logo me-3">
-                            <i class="bi bi-robot"></i>
-                        </div>
+                        <div class="header-logo me-3"><i class="bi bi-stars"></i></div>
                         <div>
-                            <div class="header-title">AI Assistant</div>
-                            <div class="header-subtitle">Smart Planning Helper</div>
+                            <h1 class="header-title">Smart Assistant</h1>
+                            <div class="header-subtitle">Actionable plans powered by your real planner data</div>
+                            <div class="header-user-chip">
+                                <i class="bi bi-person-circle"></i>
+                                <span id="userName">...</span>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="header-nav">
-                        <div class="nav-buttons">
-                            <a href="/dashboard" class="nav-btn dashboard-btn" title="Go to Dashboard">
-                                <i class="bi bi-house"></i>
-                                <span class="btn-text">Dashboard</span>
-                            </a>
-                            <a href="/reports" class="nav-btn reports-btn" title="View Reports">
-                                <i class="bi bi-graph-up"></i>
-                                <span class="btn-text">Reports</span>
-                            </a>
-                            <a href="/kanban" class="nav-btn kanban-btn" title="Kanban Board">
-                                <i class="bi bi-columns-gap"></i>
-                                <span class="btn-text">Kanban</span>
-                            </a>
-                            <button class="nav-btn timezone-btn" onclick="openTimezoneSettings()" title="Change Timezone">
-                                <i class="bi bi-gear"></i>
-                                <span class="btn-text">Timezone</span>
-                            </button>
-                            <a href="#" onclick="logout()" class="nav-btn logout-btn" title="Logout">
-                                <i class="bi bi-box-arrow-right"></i>
-                                <span class="btn-text">Logout</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Welcome Message Row -->
-            <div class="row">
-                <div class="col-12">
-                    <div class="welcome-message-row">
-                        <div class="welcome-container">
-                            <div class="welcome-icon">
-                                <i class="bi bi-person-circle"></i>
-                            </div>
-                            <div class="welcome-text">
-                                <span class="welcome-greeting">Welcome back, </span>
-                                <span class="user-name" id="userName"></span>
+                        <button class="menu-toggle d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#assistantTopMenu" aria-controls="assistantTopMenu" aria-expanded="false" aria-label="Toggle navigation">
+                            <i class="bi bi-list"></i>
+                        </button>
+                        <div class="collapse d-md-block top-menu-collapse" id="assistantTopMenu">
+                            <div class="nav-buttons">
+                                <button class="nav-btn timezone-btn" onclick="openTimezoneSettings()" title="Change Timezone">
+                                    <i class="bi bi-gear"></i><span class="btn-text">Timezone</span>
+                                </button>
+                                <a href="/dashboard" class="nav-btn dashboard-btn" title="Dashboard"><i class="bi bi-house-door"></i><span class="btn-text">Dashboard</span></a>
+                                <a href="/reports" class="nav-btn reports-btn" title="Reports"><i class="bi bi-graph-up"></i><span class="btn-text">Reports</span></a>
+                                <a href="/assistant" class="nav-btn assistant-btn" title="Assistant"><i class="bi bi-robot"></i><span class="btn-text">Assistant</span></a>
+                                <a href="/kanban" class="nav-btn kanban-btn" title="Kanban"><i class="bi bi-columns-gap"></i><span class="btn-text">Kanban</span></a>
+                                <button class="nav-btn logout-btn" onclick="logout()" title="Logout"><i class="bi bi-box-arrow-right"></i><span class="btn-text">Logout</span></button>
                             </div>
                         </div>
                     </div>
@@ -691,157 +553,119 @@
         </div>
     </header>
 
-    <!-- Main Content -->
-    <div class="main-content">
+    <main class="main-content">
         <div class="container">
-            <!-- System Selection -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card model-selector">
-                        <div class="card-body">
-                            <h5 class="card-title mb-3">
-                                <i class="bi bi-gear me-2"></i>
-                                AI System Configuration
-                            </h5>
-                            <div class="row mb-3">
-                                <div class="col-12">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="agenticMode" onchange="toggleAgenticMode()">
-                                        <label class="form-check-label" for="agenticMode">
-                                            <strong>Enable Agentic AI System</strong> (Advanced multi-agent routing)
-                                        </label>
-                                    </div>
-                                    <small class="text-muted">When enabled, your requests will be automatically routed to specialized agents (Planning, Analytics, Advisor, General)</small>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <label for="modelSelect" class="form-label">Choose Model</label>
-                                    <select class="form-select" id="modelSelect" onchange="updateModelInfo()">
-                                        <option value="">Select a model...</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <div id="modelInfo" class="mt-3" style="display: none;">
-                                        <small class="text-muted">
-                                            <strong>Base URL:</strong> <span id="modelBaseUrl"></span><br>
-                                            <strong>Model:</strong> <span id="modelName"></span>
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
+            <div class="row g-3">
+                <div class="col-lg-4">
+                    <div class="panel mb-3">
+                        <div class="panel-title"><i class="bi bi-cpu me-2"></i>Assistant Controls</div>
+
+                        <label class="form-label">Experience mode</label>
+                        <div class="mode-switch">
+                            <button class="mode-btn active" id="simpleModeBtn" type="button" onclick="setAssistantUIMode('simple')">Simple</button>
+                            <button class="mode-btn" id="advancedModeBtn" type="button" onclick="setAssistantUIMode('advanced')">Advanced</button>
                         </div>
+                        <div class="tiny mb-2" id="modeHint">Simple mode: use ready buttons or ask naturally. No prompt engineering needed.</div>
+
+                        <label class="form-label" for="modelSelect">Model</label>
+                        <div class="d-flex gap-2 mb-3">
+                            <select class="form-select" id="modelSelect"></select>
+                            <button class="btn btn-outline-secondary" onclick="loadModels()" title="Refresh models"><i class="bi bi-arrow-clockwise"></i></button>
+                        </div>
+
+                        <div id="advancedControls" style="display:none;">
+                        <label class="form-label" for="projectMode">Project mode</label>
+                        <select class="form-select mb-2" id="projectMode">
+                            <option value="auto">Auto (detect from prompt)</option>
+                            <option value="strict">Strict (single project)</option>
+                            <option value="cross">Cross-project</option>
+                        </select>
+                        <select class="form-select mb-3" id="focusProjectSelect">
+                            <option value="">Focus project (optional)</option>
+                        </select>
+
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" role="switch" id="agenticMode" checked>
+                            <label class="form-check-label" for="agenticMode"><strong>Agentic mode</strong> (smart routing)</label>
+                        </div>
+
+                        <label class="form-label" for="systemPrompt">System prompt</label>
+                        <textarea class="form-control mb-3" id="systemPrompt" placeholder="Generated automatically..."></textarea>
+                        </div>
+
+                        <label class="form-label">Quick prompts</label>
+                        <div class="quick-prompts mb-2" id="quickPrompts">
+                            <button class="prompt-pill" data-prompt="Build my ideal schedule for tomorrow using my current tasks and reminders.">Tomorrow plan</button>
+                            <button class="prompt-pill" data-prompt="Analyze what is blocking me and suggest the 3 highest-impact next actions.">Find blockers</button>
+                            <button class="prompt-pill" data-prompt="Create a deep-work plan for today with realistic breaks and priorities.">Deep work</button>
+                            <button class="prompt-pill" data-prompt="Give me a weekly optimization plan to improve completion rate.">Weekly optimize</button>
+                        </div>
+                        <div class="tiny">Tip: agentic mode picks a specialist (planning, analytics, advisor) automatically.</div>
+                        <div class="control-actions">
+                            <button class="btn btn-outline-primary btn-sm" onclick="runDailyBriefing()">
+                                <i class="bi bi-calendar-week me-1"></i>Generate Daily Briefing
+                            </button>
+                            <button class="btn btn-outline-warning btn-sm" onclick="runRecoveryPlan()">
+                                <i class="bi bi-life-preserver me-1"></i>Generate Recovery Plan
+                            </button>
+                        </div>
+                        <button class="btn btn-outline-danger btn-sm mt-2" onclick="resetAssistantMemory()">
+                            <i class="bi bi-trash3 me-1"></i>Reset assistant memory
+                        </button>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-title"><i class="bi bi-lightning-charge me-2"></i>Smart Briefing</div>
+                        <div class="smart-grid" id="smartGrid">
+                            <div class="smart-card"><div class="smart-value" id="metricTasks">-</div><div class="smart-label">Total tasks</div></div>
+                            <div class="smart-card"><div class="smart-value" id="metricDone">-</div><div class="smart-label">Completed tasks</div></div>
+                            <div class="smart-card"><div class="smart-value" id="metricUrgent">-</div><div class="smart-label">Urgent open tasks</div></div>
+                            <div class="smart-card"><div class="smart-value" id="metricFocus">-</div><div class="smart-label">Focus score</div></div>
+                        </div>
+                        <div class="smart-spotlights" id="smartSpotlights"></div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Agent Selection & System Prompt -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-robot me-2"></i>
-                                <span id="systemPromptTitle">AI Agent & System Prompt</span>
-                                <button class="btn btn-sm btn-outline-primary float-end" onclick="generateSystemPrompt()" id="regenerateBtn">
-                                    <i class="bi bi-arrow-clockwise me-1"></i>Regenerate
+                <div class="col-lg-8">
+                    <div class="panel">
+                        <div class="panel-title"><i class="bi bi-chat-left-text me-2"></i>Ask Your Planner Assistant</div>
+
+                        <div class="simple-actions" id="simpleActions">
+                            <button class="simple-action-btn" type="button" onclick="runSimplePrompt('What should I focus on right now based on my real tasks?')">
+                                <i class="bi bi-lightning me-1"></i>What should I do now?
+                            </button>
+                            <button class="simple-action-btn" type="button" onclick="runSimplePrompt('Create my realistic plan for today with time blocks.')">
+                                <i class="bi bi-sun me-1"></i>Plan my day
+                            </button>
+                            <button class="simple-action-btn" type="button" onclick="runSimplePrompt('Build my weekly priorities and milestones from current projects.')">
+                                <i class="bi bi-calendar3-week me-1"></i>Plan my week
+                            </button>
+                            <button class="simple-action-btn" type="button" onclick="runSimplePrompt('I feel behind. Give me a practical recovery plan.')">
+                                <i class="bi bi-life-preserver me-1"></i>Rescue me
+                            </button>
+                        </div>
+
+                        <label class="form-label" for="userPrompt">Your request</label>
+                        <textarea class="form-control mb-3" id="userPrompt" placeholder="Example: create a high-performance plan for tomorrow based on my projects, tasks, and reminders..."></textarea>
+
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                            <div class="tiny" id="routeHint">Route: planning specialist</div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary btn-run" id="sendButton" onclick="sendRequest()">
+                                    <i class="bi bi-send me-1"></i>Run Assistant
                                 </button>
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <!-- Agentic System Info -->
-                            <div id="agenticInfo" style="display: none;">
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label">Detected Agent:</label>
-                                        <div id="detectedAgent" class="badge bg-success fs-6 p-2">
-                                            <i class="bi bi-robot me-1"></i>Auto-detecting...
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Agent Description:</label>
-                                        <div id="agentDescription" class="text-muted small">
-                                            AI will automatically select the best agent for your request
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="alert alert-info">
-                                    <i class="bi bi-info-circle me-2"></i>
-                                    <strong>Agentic Mode:</strong> Your request will be automatically routed to the most appropriate specialized agent (Planning, Analytics, Advisor, or General).
-                                </div>
-                            </div>
-                            
-                            <!-- Traditional System Info -->
-                            <div id="traditionalInfo">
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label">Selected Agent:</label>
-                                        <div id="selectedAgent" class="badge bg-primary fs-6 p-2">
-                                            <i class="bi bi-robot me-1"></i>General Assistant
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Agent Description:</label>
-                                        <div id="agentDescriptionTraditional" class="text-muted small">
-                                            Handles general questions and provides basic assistance
-                                        </div>
-                                    </div>
-                                </div>
-                                <textarea class="form-control prompt-textarea" id="systemPrompt" placeholder="System prompt will be generated automatically based on your request..."></textarea>
+                                <button class="btn btn-outline-danger btn-stop" id="stopButton" onclick="stopAssistantRequest()" disabled>
+                                    <i class="bi bi-stop-circle me-1"></i>Stop
+                                </button>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- User Prompt -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-person me-2"></i>
-                                Your Request
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <textarea class="form-control prompt-textarea" id="userPrompt" placeholder="Describe what you want the AI to help you with... (e.g., generate a plan for tomorrow based on my tasks which includes 2 hours of practicing sports)" oninput="generateSystemPrompt()" onkeyup="if(document.getElementById('agenticMode').checked) updateDetectedAgent()"></textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Send Button -->
-            <div class="row mb-4">
-                <div class="col-12 text-center">
-                    <button class="btn btn-outline-primary btn-send" onclick="sendRequest()" id="sendButton">
-                        <i class="bi bi-send me-2"></i>
-                        Send Request
-                    </button>
-                    <div class="loading mt-2" id="loadingIndicator">
-                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <span class="text-muted">Processing request...</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Response -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-chat-dots me-2"></i>
-                                AI Response
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="response-box" id="responseBox">
-                                <div class="text-muted text-center">
-                                    <i class="bi bi-robot fs-1"></i>
-                                    <p class="mt-2">AI assistant will respond here...</p>
+                        <div class="response-wrap" id="responseBox">
+                            <div class="response-empty">
+                                <div>
+                                    <i class="bi bi-stars" style="font-size: 2rem; color: #7fa8f7;"></i>
+                                    <div class="mt-2">Your smart assistant is ready.</div>
+                                    <div class="tiny">Ask for plans, analysis, or strategic next steps.</div>
                                 </div>
                             </div>
                         </div>
@@ -849,855 +673,1117 @@
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
-    <!-- Toast Container -->
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;">
-        <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header">
-                <i id="toastIcon" class="bi me-2"></i>
-                <strong id="toastTitle" class="me-auto"></strong>
-                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+    <div class="modal fade" id="timezoneModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-geo-alt me-2"></i>Timezone settings</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <label class="form-label">Country</label>
+                        <select id="countrySelect" class="form-select"></select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">City / Timezone</label>
+                        <select id="citySelect" class="form-select"></select>
+                    </div>
+                    <div class="tiny">Current timezone: <span id="currentTimezoneText">-</span></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveTimezone()">Save timezone</button>
+                </div>
             </div>
-            <div id="toastBody" class="toast-body"></div>
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+    <script src="/static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script>
         let models = [];
-        let userData = null;
-        let projects = [];
-        let tasks = [];
-        let activities = [];
-        let reminders = [];
+        let plannerContext = {
+            metrics: {
+                projects: 0,
+                tasks: 0,
+                done_tasks: 0,
+                urgent_open_tasks: 0,
+                focus_score: 0,
+                upcoming_reminders: 0
+            },
+            active_projects: [],
+            focused_projects: [],
+            urgent_tasks: [],
+            upcoming_tasks: [],
+            upcoming_reminders: [],
+            recent_activity: [],
+            smart_actions: []
+        };
+        let availableTimezones = {};
+        let currentTimezone = 'UTC';
+        let conversationHistory = [];
+        let currentSuggestedActions = [];
+        let assistantUIMode = 'simple';
+        let currentRequestController = null;
+        let requestInFlight = false;
+        let assistantEffectiveness = {
+            window_days: 14,
+            action_attempts: 0,
+            completion_rate: 0,
+            action_success: 0,
+            action_failed: 0,
+            top_actions: []
+        };
 
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Assistant page initializing...');
-            
-            // Check API key first
+        document.addEventListener('DOMContentLoaded', async () => {
             const apiKey = localStorage.getItem('apiKey');
-            console.log('API key found:', !!apiKey);
-            
             if (!apiKey) {
-                console.log('No API key found, redirecting to login...');
                 window.location.href = '/login';
                 return;
             }
-            
-            loadUserInfo();
-            loadModels();
-            loadData();
+
+            bindQuickPrompts();
+            setAssistantUIMode('simple');
+            document.getElementById('userPrompt').addEventListener('input', updateRoutingHint);
+            document.getElementById('agenticMode').addEventListener('change', () => {
+                generateSystemPrompt();
+                updateRoutingHint();
+            });
+            document.getElementById('projectMode').addEventListener('change', async () => {
+                await refreshProjectModeContext();
+            });
+            document.getElementById('focusProjectSelect').addEventListener('change', async () => {
+                await refreshProjectModeContext();
+            });
+
+            await Promise.all([
+                loadUserInfo(),
+                loadModels(),
+                loadAssistantContext('auto', null),
+                loadAssistantEffectiveness(),
+                loadTimezoneData()
+            ]);
+
+            renderMetrics();
+            loadConversationHistory();
+            generateSystemPrompt();
+            updateRoutingHint();
         });
 
-        function loadUserInfo() {
-            console.log('Loading user info...');
-            const displayName = localStorage.getItem('displayName');
-            const username = localStorage.getItem('username');
-            const userName = displayName || username || 'User';
-            
-            const userNameElement = document.getElementById('userName');
-            if (userNameElement) {
-                userNameElement.textContent = userName;
+        function getApiKey() {
+            return localStorage.getItem('apiKey');
+        }
+
+        function setRequestInFlight(isActive) {
+            requestInFlight = !!isActive;
+            const sendButton = document.getElementById('sendButton');
+            const stopButton = document.getElementById('stopButton');
+            if (sendButton) sendButton.disabled = requestInFlight;
+            if (stopButton) stopButton.disabled = !requestInFlight;
+        }
+
+        function stopAssistantRequest() {
+            if (!currentRequestController) return;
+            currentRequestController.abort();
+            currentRequestController = null;
+            setRequestInFlight(false);
+            const status = document.getElementById('inlineActionStatus');
+            if (status) status.textContent = 'Request stopped.';
+        }
+
+        function setAssistantUIMode(mode) {
+            assistantUIMode = mode === 'advanced' ? 'advanced' : 'simple';
+            const isAdvanced = assistantUIMode === 'advanced';
+            document.getElementById('advancedControls').style.display = isAdvanced ? 'block' : 'none';
+            document.getElementById('simpleActions').style.display = isAdvanced ? 'none' : 'grid';
+            document.getElementById('simpleModeBtn').classList.toggle('active', !isAdvanced);
+            document.getElementById('advancedModeBtn').classList.toggle('active', isAdvanced);
+            document.getElementById('modeHint').textContent = isAdvanced
+                ? 'Advanced mode: fine-tune system prompt and project scope.'
+                : 'Simple mode: use ready buttons or ask naturally. No prompt engineering needed.';
+            if (!isAdvanced) {
+                document.getElementById('projectMode').value = 'auto';
+                document.getElementById('focusProjectSelect').value = '';
             }
+            updateRoutingHint();
+            generateSystemPrompt();
+            refreshProjectModeContext();
+        }
+
+        function runSimplePrompt(promptText) {
+            const input = document.getElementById('userPrompt');
+            input.value = promptText;
+            updateRoutingHint();
+            sendRequest();
+        }
+
+        function conversationStorageKey() {
+            const user = localStorage.getItem('username') || 'user';
+            return `assistant_history_${user}`;
+        }
+
+        function loadConversationHistory() {
+            try {
+                const raw = localStorage.getItem(conversationStorageKey());
+                conversationHistory = raw ? JSON.parse(raw) : [];
+            } catch {
+                conversationHistory = [];
+            }
+            conversationHistory = compactLocalHistory(conversationHistory);
+            persistConversationHistory();
+        }
+
+        function persistConversationHistory() {
+            localStorage.setItem(conversationStorageKey(), JSON.stringify(conversationHistory));
+        }
+
+        function compactLocalHistory(history) {
+            const items = (history || []).slice(-24);
+            let totalChars = items.reduce((sum, x) => sum + (x.content || '').length, 0);
+            while (items.length > 6 && totalChars > 7000) {
+                items.shift();
+                totalChars = items.reduce((sum, x) => sum + (x.content || '').length, 0);
+            }
+            return items;
+        }
+
+        async function loadUserInfo() {
+            const response = await fetch('/users/me', {
+                headers: { 'X-API-Key': getApiKey() }
+            });
+            if (!response.ok) return;
+            const user = await response.json();
+            document.getElementById('userName').textContent = user.display_name || user.username || 'User';
+            currentTimezone = user.timezone || 'UTC';
+            document.getElementById('currentTimezoneText').textContent = currentTimezone;
         }
 
         async function loadModels() {
-            try {
-                const apiKey = localStorage.getItem('apiKey');
-                if (!apiKey) {
-                    console.error('No API key found for loading models');
-                    return;
-                }
-
-                const response = await fetch('/models/', {
-                    headers: {
-                        'X-API-Key': apiKey
-                    }
-                });
-
-                if (response.ok) {
-                    models = await response.json();
-                    console.log('Loaded models:', models);
-                    
-                    const modelSelect = document.getElementById('modelSelect');
-                    modelSelect.innerHTML = '<option value="">Select a model...</option>';
-                    
-                    models.forEach(model => {
-                        const option = document.createElement('option');
-                        option.value = model.api_key;
-                        option.textContent = `${model.name} (${model.base_url})`;
-                        modelSelect.appendChild(option);
-                    });
-                } else {
-                    console.error('Failed to load models:', response.status);
-                    showToast('Error', 'Failed to load models', 'danger');
-                }
-            } catch (error) {
-                console.error('Error loading models:', error);
-                showToast('Error', 'Failed to load models', 'danger');
-            }
-        }
-
-        async function loadData() {
-            try {
-                const apiKey = localStorage.getItem('apiKey');
-                if (!apiKey) return;
-
-                // Load all data in parallel
-                const [projectsRes, tasksRes, activitiesRes, remindersRes] = await Promise.all([
-                    fetch('/projects/', { headers: { 'X-API-Key': apiKey } }),
-                    fetch('/tasks/', { headers: { 'X-API-Key': apiKey } }),
-                    fetch('/activities/', { headers: { 'X-API-Key': apiKey } }),
-                    fetch('/reminders/today', { headers: { 'X-API-Key': apiKey } })
-                ]);
-
-                if (projectsRes.ok) projects = await projectsRes.json();
-                if (tasksRes.ok) tasks = await tasksRes.json();
-                if (activitiesRes.ok) activities = await activitiesRes.json();
-                if (remindersRes.ok) reminders = await remindersRes.json();
-
-                console.log('Loaded data:', { projects: projects.length, tasks: tasks.length, activities: activities.length, reminders: reminders.length });
-                
-                // Generate initial system prompt
-                generateSystemPrompt();
-            } catch (error) {
-                console.error('Error loading data:', error);
-                showToast('Error', 'Failed to load data', 'danger');
-            }
-        }
-
-        // Agent-based system for better performance
-        const agents = {
-            planner: {
-                name: "Planning Agent",
-                description: "Specializes in task prioritization, scheduling, and project planning",
-                keywords: ["plan", "schedule", "prioritize", "organize", "deadline", "urgent", "important"]
-            },
-            analyst: {
-                name: "Analytics Agent", 
-                description: "Analyzes time tracking, productivity patterns, and performance metrics",
-                keywords: ["analyze", "time", "productivity", "efficiency", "pattern", "report", "statistics"]
-            },
-            advisor: {
-                name: "Advisory Agent",
-                description: "Provides general advice, tips, and best practices for productivity",
-                keywords: ["advice", "tip", "help", "how", "best practice", "suggestion", "recommendation"]
-            },
-            assistant: {
-                name: "General Assistant",
-                description: "Handles general questions and provides basic assistance",
-                keywords: ["what", "when", "where", "why", "how", "explain", "define"]
-            }
-        };
-
-        function detectAgent(userPrompt) {
-            const prompt = userPrompt.toLowerCase();
-            let bestAgent = 'assistant';
-            let maxScore = 0;
-
-            for (const [agentName, agent] of Object.entries(agents)) {
-                let score = 0;
-                agent.keywords.forEach(keyword => {
-                    if (prompt.includes(keyword)) {
-                        score += 1;
-                    }
-                });
-                if (score > maxScore) {
-                    maxScore = score;
-                    bestAgent = agentName;
-                }
-            }
-            return bestAgent;
-        }
-
-        // Toggle between agentic and traditional modes
-        function toggleAgenticMode() {
-            const agenticMode = document.getElementById('agenticMode').checked;
-            const agenticInfo = document.getElementById('agenticInfo');
-            const traditionalInfo = document.getElementById('traditionalInfo');
-            const systemPromptTitle = document.getElementById('systemPromptTitle');
-            const regenerateBtn = document.getElementById('regenerateBtn');
-            
-            if (agenticMode) {
-                agenticInfo.style.display = 'block';
-                traditionalInfo.style.display = 'none';
-                systemPromptTitle.textContent = 'Agentic AI System';
-                regenerateBtn.style.display = 'none';
-            } else {
-                agenticInfo.style.display = 'none';
-                traditionalInfo.style.display = 'block';
-                systemPromptTitle.textContent = 'AI Agent & System Prompt';
-                regenerateBtn.style.display = 'inline-block';
-            }
-            
-            // Update detected agent when switching modes
-            if (agenticMode) {
-                updateDetectedAgent();
-            }
-        }
-
-        function updateDetectedAgent() {
-            const userPrompt = document.getElementById('userPrompt').value;
-            if (!userPrompt.trim()) {
-                document.getElementById('detectedAgent').innerHTML = '<i class="bi bi-robot me-1"></i>Auto-detecting...';
-                document.getElementById('agentDescription').textContent = 'AI will automatically select the best agent for your request';
+            const response = await fetch('/models/', {
+                headers: { 'X-API-Key': getApiKey() }
+            });
+            const select = document.getElementById('modelSelect');
+            if (!response.ok) {
+                select.innerHTML = '<option value="">No models found</option>';
                 return;
             }
-            
-            const selectedAgent = detectAgent(userPrompt);
-            const agent = agents[selectedAgent];
-            
-            // Update detected agent UI
-            const detectedAgentEl = document.getElementById('detectedAgent');
-            detectedAgentEl.className = `badge fs-6 p-2 ${getAgentBadgeClass(selectedAgent)}`;
-            detectedAgentEl.innerHTML = `<i class="bi ${getAgentIcon(selectedAgent)} me-1"></i>${agent.name}`;
-            
-            document.getElementById('agentDescription').textContent = agent.description;
+            models = await response.json();
+            select.innerHTML = models.map(m => `<option value="${m.api_key}">${m.name}</option>`).join('');
+            if (!models.length) {
+                select.innerHTML = '<option value="">No models found</option>';
+            }
+        }
+
+        function getProjectModeValue() {
+            if (assistantUIMode !== 'advanced') return 'auto';
+            const mode = document.getElementById('projectMode')?.value || 'auto';
+            return ['auto', 'strict', 'cross'].includes(mode) ? mode : 'auto';
+        }
+
+        function getFocusProjectIdValue() {
+            if (assistantUIMode !== 'advanced') return null;
+            const raw = document.getElementById('focusProjectSelect')?.value || '';
+            const parsed = Number(raw);
+            return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+        }
+
+        async function refreshProjectModeContext() {
+            await loadAssistantContext(getProjectModeValue(), getFocusProjectIdValue());
+            renderMetrics();
+            generateSystemPrompt();
+        }
+
+        async function loadAssistantContext(projectMode = 'auto', focusProjectId = null) {
+            const params = new URLSearchParams();
+            params.set('project_mode', projectMode || 'auto');
+            if (focusProjectId) params.set('focus_project_id', String(focusProjectId));
+            const response = await fetch(`/assistant/context?${params.toString()}`, {
+                headers: { 'X-API-Key': getApiKey() }
+            });
+            if (!response.ok) return;
+            const data = await response.json();
+            plannerContext = {
+                ...plannerContext,
+                ...data,
+                metrics: { ...plannerContext.metrics, ...(data.metrics || {}) }
+            };
+            renderFocusProjectOptions();
+        }
+
+        function renderFocusProjectOptions() {
+            const select = document.getElementById('focusProjectSelect');
+            if (!select) return;
+            const prev = select.value || '';
+            const options = (plannerContext.active_projects || [])
+                .map(p => `<option value="${p.id}">${p.name}</option>`)
+                .join('');
+            select.innerHTML = `<option value="">Focus project (optional)</option>${options}`;
+            if (prev && Array.from(select.options).some(o => o.value === prev)) {
+                select.value = prev;
+            } else if (getProjectModeValue() === 'strict' && select.options.length > 1) {
+                select.value = select.options[1].value;
+            }
+        }
+
+        async function loadAssistantEffectiveness() {
+            const response = await fetch('/assistant/effectiveness?window_days=14', {
+                headers: { 'X-API-Key': getApiKey() }
+            });
+            if (!response.ok) return;
+            assistantEffectiveness = await response.json();
+        }
+
+        async function trackAssistantEvent(eventType, source, actionType = null, status = null, metadata = null) {
+            try {
+                await fetch('/assistant/events', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': getApiKey()
+                    },
+                    body: JSON.stringify({
+                        event_type: eventType,
+                        source: source || 'assistant',
+                        action_type: actionType,
+                        status: status,
+                        metadata: metadata || {}
+                    })
+                });
+            } catch {
+                // Keep UX smooth if tracking fails.
+            }
+        }
+
+        function renderMetrics() {
+            const metrics = plannerContext.metrics || {};
+            document.getElementById('metricTasks').textContent = metrics.tasks || 0;
+            document.getElementById('metricDone').textContent = metrics.done_tasks || 0;
+            document.getElementById('metricUrgent').textContent = metrics.urgent_open_tasks || 0;
+            document.getElementById('metricFocus').textContent = `${metrics.focus_score || 0}%`;
+            renderSpotlights();
+        }
+
+        function renderSpotlights() {
+            const blocks = [];
+            const focused = plannerContext.focused_projects || [];
+            const urgent = plannerContext.urgent_tasks || [];
+            const actions = plannerContext.smart_actions || [];
+            const mode = plannerContext.project_mode || getProjectModeValue();
+            const scopeIds = plannerContext.scope_project_ids || [];
+
+            blocks.push({
+                title: 'Project Scope',
+                items: [
+                    `Mode: ${mode}`,
+                    scopeIds.length ? `Scoped IDs: ${scopeIds.join(', ')}` : 'All projects in scope'
+                ]
+            });
+
+            if (focused.length) {
+                blocks.push({
+                    title: 'Detected Project Focus',
+                    items: focused.slice(0, 3).map(p => `${p.name}`)
+                });
+            }
+            if (urgent.length) {
+                blocks.push({
+                    title: 'Urgent Task IDs',
+                    items: urgent.slice(0, 3).map(t => `#${t.id} ${t.title}`)
+                });
+            }
+            if (actions.length) {
+                blocks.push({
+                    title: 'Execution Hints',
+                    items: actions.slice(0, 3)
+                });
+            }
+            const eff = assistantEffectiveness || {};
+            const topAction = (eff.top_actions || [])[0];
+            if ((eff.action_attempts || 0) > 0) {
+                blocks.push({
+                    title: `Action Effectiveness (${eff.window_days || 14}d)`,
+                    items: [
+                        `${eff.completion_rate || 0}% success (${eff.action_success || 0}/${eff.action_attempts || 0})`,
+                        `${eff.action_failed || 0} failed attempts`,
+                        topAction ? `Most used: ${topAction.action_type} (${topAction.count})` : 'No top action yet'
+                    ]
+                });
+            }
+            if (!blocks.length) {
+                blocks.push({
+                    title: 'Assistant Hint',
+                    items: ['Ask for a project-specific plan to unlock deeper recommendations.']
+                });
+            }
+
+            const html = blocks.map(block => `
+                <div class="spotlight-block">
+                    <div class="spotlight-title">${block.title}</div>
+                    <ul class="spotlight-items">
+                        ${block.items.map(item => `<li>${item}</li>`).join('')}
+                    </ul>
+                </div>
+            `).join('');
+            document.getElementById('smartSpotlights').innerHTML = html;
+        }
+
+        function bindQuickPrompts() {
+            document.getElementById('quickPrompts').addEventListener('click', (event) => {
+                const target = event.target.closest('.prompt-pill');
+                if (!target) return;
+                document.getElementById('userPrompt').value = target.getAttribute('data-prompt') || '';
+                generateSystemPrompt();
+                updateRoutingHint();
+            });
+        }
+
+        function detectRoute(prompt) {
+            const text = (prompt || '').toLowerCase();
+            if (text.match(/plan|schedule|tomorrow|today/)) return 'planning specialist';
+            if (text.match(/analy|report|trend|score|metric/)) return 'analytics specialist';
+            if (text.match(/advice|focus|motivat|improv/)) return 'advisor specialist';
+            return 'general specialist';
+        }
+
+        function updateRoutingHint() {
+            const route = detectRoute(document.getElementById('userPrompt').value);
+            const mode = document.getElementById('agenticMode').checked ? 'agentic' : 'single-model';
+            document.getElementById('routeHint').textContent = assistantUIMode === 'advanced'
+                ? `Route: ${route} (${mode} mode)`
+                : 'Tip: Ask naturally or tap a quick button.';
         }
 
         function generateSystemPrompt() {
-            const agenticMode = document.getElementById('agenticMode').checked;
-            
-            if (agenticMode) {
-                updateDetectedAgent();
+            const mode = document.getElementById('agenticMode').checked;
+            const metrics = plannerContext.metrics || {};
+            const focused = plannerContext.focused_projects || [];
+            const focusNames = focused.length ? focused.map(p => p.name).join(', ') : 'none detected';
+            const strategyHints = (plannerContext.smart_actions || []).slice(0, 2).join(' | ') || 'not available';
+            const projectMode = getProjectModeValue();
+            const projects = metrics.projects || 0;
+            const totalTasks = metrics.tasks || 0;
+            const completed = metrics.done_tasks || 0;
+            const urgent = metrics.urgent_open_tasks || 0;
+            const reminders = metrics.upcoming_reminders || 0;
+            const prompt = mode
+                ? `You are a strategic productivity agent for a smart time management app. Use the user's live planner context.\nProject mode: ${projectMode}. Projects: ${projects}, Tasks: ${totalTasks}, Completed tasks: ${completed}, Urgent open tasks: ${urgent}, Upcoming reminders: ${reminders}, Timezone: ${currentTimezone}.\nDetected project focus: ${focusNames}. Strategy hints: ${strategyHints}.\nGround every recommendation in known tasks and projects, and cite them explicitly when possible.`
+                : `You are a practical personal planning assistant inside a smart planner app.\nProject mode: ${projectMode}. Current context: Projects ${projects}, Tasks ${totalTasks}, Completed ${completed}, Urgent open ${urgent}, Upcoming reminders ${reminders}, Timezone ${currentTimezone}.\nDetected project focus: ${focusNames}. Strategy hints: ${strategyHints}.\nRespond clearly in markdown with concrete next steps tied to the user's real tasks.`;
+            document.getElementById('systemPrompt').value = prompt;
+        }
+
+        function startAssistantProgress(responseBox) {
+            const startedAt = Date.now();
+            const stages = [
+                'Collecting planner context...',
+                'Matching your request to tasks and projects...',
+                'Selecting specialist agent...',
+                'Generating strategy...',
+                'Finalizing actionable plan...'
+            ];
+            let stageIndex = 0;
+
+            const render = () => {
+                responseBox.innerHTML = `
+                    <div class="thinking">
+                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                        <span>${stages[stageIndex]}</span>
+                    </div>
+                    <div class="tiny mt-2">Elapsed: ${Math.round((Date.now() - startedAt) / 1000)}s</div>
+                `;
+            };
+
+            render();
+            const timer = setInterval(() => {
+                stageIndex = Math.min(stageIndex + 1, stages.length - 1);
+                render();
+            }, 1300);
+
+            return {
+                stop() {
+                    clearInterval(timer);
+                }
+            };
+        }
+
+        function buildResponseMetaBadges(agenticMode, data, modelApiKey) {
+            const model = models.find(m => m.api_key === modelApiKey);
+            const modeLabel = agenticMode ? (data.agent_used || 'agentic') : 'single-model';
+            const badges = [
+                `<span class="badge-soft">${modeLabel}</span>`,
+                `<span class="badge-soft">${model ? model.name : 'model'}</span>`
+            ];
+
+            const meta = data.meta || {};
+            if (meta.estimated_tokens) {
+                badges.push(`<span class="badge-soft">~${meta.estimated_tokens} ctx tokens</span>`);
+            }
+            if (meta.matched_entities) {
+                badges.push(`<span class="badge-soft">${meta.matched_entities} planner matches</span>`);
+            }
+            if (meta.focused_projects) {
+                badges.push(`<span class="badge-soft">${meta.focused_projects} project focus</span>`);
+            }
+            if (meta.project_mode) {
+                badges.push(`<span class="badge-soft">mode: ${meta.project_mode}</span>`);
+            }
+            if (meta.compacted) {
+                badges.push('<span class="badge-soft">context compacted</span>');
+            }
+            return badges.join('');
+        }
+
+        function renderMarkdownResult(responseBox, markdown, badgesHtml = '', showFallback = true) {
+            currentSuggestedActions = buildSuggestedActions(markdown);
+            responseBox.innerHTML = `
+                <div class="response-meta">
+                    <div class="d-flex gap-2 flex-wrap">
+                        ${badgesHtml}
+                    </div>
+                    <div class="tiny">${new Date().toLocaleString()}</div>
+                </div>
+                <div class="response-content" id="responseContent"></div>
+                <div class="response-actions">
+                    <div class="response-actions-title">One-click apply from this answer</div>
+                    <div class="suggested-actions" id="suggestedActionsBar"></div>
+                    <div class="response-actions-grid">
+                        <button class="action-chip" onclick="performInlineAction('create_task')"><i class="bi bi-plus-square me-1"></i>Create task</button>
+                        <button class="action-chip" onclick="performInlineAction('reschedule_task')"><i class="bi bi-calendar2-check me-1"></i>Reschedule task</button>
+                        <button class="action-chip" onclick="performInlineAction('add_reminder')"><i class="bi bi-bell me-1"></i>Add reminder</button>
+                        <button class="action-chip" onclick="performInlineAction('start_focus_block')"><i class="bi bi-hourglass-split me-1"></i>Start focus block</button>
+                    </div>
+                    <div class="response-actions-forms">
+                        <div class="action-form">
+                            <div class="tiny mb-1">Task title</div>
+                            <input class="form-control" id="inlineActionTitle" placeholder="Add task from this plan">
+                            <div class="tiny mt-1 mb-1">Deadline</div>
+                            <input class="form-control" type="datetime-local" id="inlineActionDeadline">
+                        </div>
+                        <div class="action-form">
+                            <div class="tiny mb-1">Task ID for reschedule/focus</div>
+                            <input class="form-control" id="inlineActionTaskId" placeholder="e.g. 12">
+                            <div class="tiny mt-1 mb-1">Reminder note + time</div>
+                            <input class="form-control mb-1" id="inlineActionReminderNote" placeholder="Follow up with client">
+                            <input class="form-control" type="datetime-local" id="inlineActionReminderWhen">
+                        </div>
+                    </div>
+                    <div class="tiny mt-2" id="inlineActionStatus">Tip: adjust fields and click an action button.</div>
+                </div>
+            `;
+            if (markdown) {
+                document.getElementById('responseContent').innerHTML = marked.parse(markdown);
+            } else if (showFallback) {
+                document.getElementById('responseContent').innerHTML = '<div class="tiny">No response.</div>';
+            } else {
+                document.getElementById('responseContent').innerHTML = `
+                    <div class="thinking">
+                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                        <span>Thinking...</span>
+                    </div>
+                `;
+            }
+            renderSuggestedActions();
+            hydrateInlineActionPanel();
+        }
+
+        function buildSuggestedActions(markdown) {
+            const text = (markdown || '').toLowerCase();
+            const suggestions = [];
+            const taskIdMatches = Array.from((markdown || '').matchAll(/#(\d{1,7})/g)).map(x => Number(x[1]));
+            const uniqueTaskIds = [...new Set(taskIdMatches)].slice(0, 2);
+
+            const firstLine = ((markdown || '').split('\n').find(x => x.trim()) || '').replace(/^[-*#\s]+/, '').slice(0, 66);
+            if (firstLine) {
+                suggestions.push({
+                    label: 'Create from plan',
+                    payload: {
+                        action_type: 'create_task',
+                        title: firstLine,
+                        project_id: getPreferredProjectId()
+                    }
+                });
+            }
+
+            if (uniqueTaskIds.length) {
+                suggestions.push({
+                    label: `Reschedule #${uniqueTaskIds[0]}`,
+                    payload: {
+                        action_type: 'reschedule_task',
+                        task_id: uniqueTaskIds[0],
+                        deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+                    }
+                });
+                suggestions.push({
+                    label: `Focus on #${uniqueTaskIds[0]}`,
+                    payload: {
+                        action_type: 'start_focus_block',
+                        task_id: uniqueTaskIds[0],
+                        duration_minutes: 90
+                    }
+                });
+            }
+
+            if (text.includes('remind') || text.includes('follow up') || text.includes('deadline')) {
+                suggestions.push({
+                    label: 'Set 1h reminder',
+                    payload: {
+                        action_type: 'add_reminder',
+                        note: 'Follow the assistant plan',
+                        reminder_when: new Date(Date.now() + 60 * 60 * 1000).toISOString()
+                    }
+                });
+            }
+
+            // Keep UI compact and high-confidence.
+            return suggestions.slice(0, 3);
+        }
+
+        function renderSuggestedActions() {
+            const bar = document.getElementById('suggestedActionsBar');
+            if (!bar) return;
+            if (!currentSuggestedActions.length) {
+                bar.innerHTML = '<span class="tiny">No high-confidence auto actions detected yet.</span>';
                 return;
             }
-            
-            const userPrompt = document.getElementById('userPrompt').value;
-            const selectedAgent = detectAgent(userPrompt);
-            const agent = agents[selectedAgent];
-            
-            // Update UI to show selected agent
-            updateAgentUI(selectedAgent, agent);
-            
-            // Create a much more concise and structured system prompt
-            const systemPrompt = `You are a ${agent.name} specialized in ${agent.description}.
-
-CURRENT CONTEXT:
-- Projects: ${projects.length} active
-- Tasks: ${tasks.length} total (${tasks.filter(t => t.state === 'todo').length} todo, ${tasks.filter(t => t.state === 'doing').length} doing, ${tasks.filter(t => t.state === 'done').length} done)
-- Activities: ${activities.length} tracked
-- Reminders: ${reminders.length} set
-
-KEY DATA:
-${getRelevantData(selectedAgent)}
-
-INSTRUCTIONS:
-- Provide concise, actionable responses
-- Focus on ${agent.description.toLowerCase()}
-- Use bullet points for clarity
-- Prioritize urgent/important tasks when relevant
-- Keep responses under 500 words unless specifically asked for detailed analysis`;
-
-            document.getElementById('systemPrompt').value = systemPrompt;
+            bar.innerHTML = currentSuggestedActions
+                .map((action, idx) => `<button class="suggested-btn" onclick="applySuggestedAction(${idx})">${action.label}</button>`)
+                .join('');
         }
 
-        function updateAgentUI(agentName, agent) {
-            const selectedAgentEl = document.getElementById('selectedAgent');
-            const agentDescriptionEl = document.getElementById('agentDescription');
-            
-            // Update agent badge with color coding
-            selectedAgentEl.className = `badge fs-6 p-2 ${getAgentBadgeClass(agentName)}`;
-            selectedAgentEl.innerHTML = `<i class="bi ${getAgentIcon(agentName)} me-1"></i>${agent.name}`;
-            
-            // Update description
-            agentDescriptionEl.textContent = agent.description;
-        }
-
-        function getAgentBadgeClass(agentName) {
-            const classes = {
-                'planner': 'bg-success',
-                'analyst': 'bg-info', 
-                'advisor': 'bg-warning',
-                'assistant': 'bg-primary'
-            };
-            return classes[agentName] || 'bg-primary';
-        }
-
-        function getAgentIcon(agentName) {
-            const icons = {
-                'planner': 'bi-calendar-check',
-                'analyst': 'bi-graph-up',
-                'advisor': 'bi-lightbulb',
-                'assistant': 'bi-robot',
-                'planning': 'bi-calendar-check',
-                'analytics': 'bi-graph-up',
-                'advisor': 'bi-lightbulb',
-                'general': 'bi-robot'
-            };
-            return icons[agentName] || 'bi-robot';
-        }
-
-        function getAgentBadgeClass(agentName) {
-            const classes = {
-                'planner': 'bg-success',
-                'analyst': 'bg-info',
-                'advisor': 'bg-warning',
-                'assistant': 'bg-primary',
-                'planning': 'bg-success',
-                'analytics': 'bg-info',
-                'advisor': 'bg-warning',
-                'general': 'bg-primary'
-            };
-            return classes[agentName] || 'bg-primary';
-        }
-
-        function getAgentDisplayName(agentName) {
-            const names = {
-                'planner': 'Planning Agent',
-                'analyst': 'Analytics Agent',
-                'advisor': 'Advisory Agent',
-                'assistant': 'General Assistant',
-                'planning': 'Planning Agent',
-                'analytics': 'Analytics Agent',
-                'advisor': 'Advisory Agent',
-                'general': 'General Assistant'
-            };
-            return names[agentName] || 'AI Assistant';
-        }
-
-        function getAgentDescription(agentName) {
-            const descriptions = {
-                'planner': 'Task prioritization & scheduling expert',
-                'analyst': 'Productivity metrics & pattern analyst',
-                'advisor': 'Productivity advice & best practices',
-                'assistant': 'General assistance & support',
-                'planning': 'Task prioritization & scheduling expert',
-                'analytics': 'Productivity metrics & pattern analyst',
-                'advisor': 'Productivity advice & best practices',
-                'general': 'General assistance & support'
-            };
-            return descriptions[agentName] || 'AI Assistant';
-        }
-
-        function getRelevantData(agentType) {
-            switch(agentType) {
-                case 'planner':
-                    return getPlanningData();
-                case 'analyst':
-                    return getAnalyticsData();
-                case 'advisor':
-                    return getAdvisoryData();
-                default:
-                    return getGeneralData();
+        async function applySuggestedAction(index) {
+            const action = currentSuggestedActions[index];
+            if (!action) return;
+            await trackAssistantEvent(
+                'suggested_action_clicked',
+                'assistant_response',
+                action.payload?.action_type || null,
+                'attempted',
+                { label: action.label }
+            );
+            setInlineActionStatus(`Applying: ${action.label}...`);
+            try {
+                const result = await runAssistantAction(action.payload);
+                await trackAssistantEvent(
+                    'action_attempted',
+                    'assistant_response',
+                    action.payload?.action_type || null,
+                    'success',
+                    { label: action.label }
+                );
+                setInlineActionStatus(result.message || 'Action applied.');
+                hydrateInlineActionPanel();
+            } catch (error) {
+                await trackAssistantEvent(
+                    'action_attempted',
+                    'assistant_response',
+                    action.payload?.action_type || null,
+                    'failed',
+                    { label: action.label }
+                );
+                setInlineActionStatus(error.message || 'Action failed.', true);
             }
         }
 
-        function getPlanningData() {
-            const urgentTasks = tasks.filter(t => t.is_urgent && t.state !== 'done');
-            const importantTasks = tasks.filter(t => t.is_important && t.state !== 'done');
-            const upcomingDeadlines = tasks.filter(t => t.deadline && new Date(t.deadline) > new Date())
-                .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
-                .slice(0, 5);
-
-            return `URGENT TASKS: ${urgentTasks.map(t => `${t.title} (${t.state})`).join(', ')}
-IMPORTANT TASKS: ${importantTasks.slice(0, 3).map(t => `${t.title} (${t.state})`).join(', ')}
-UPCOMING DEADLINES: ${upcomingDeadlines.map(t => `${t.title} - ${new Date(t.deadline).toLocaleDateString()}`).join(', ')}`;
+        function toDatetimeLocalValue(date) {
+            if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+            const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+            return local.toISOString().slice(0, 16);
         }
 
-        function getAnalyticsData() {
-            const totalTime = activities.reduce((sum, a) => {
-                if (a.clock_in && a.clock_out) {
-                    return sum + (new Date(a.clock_out) - new Date(a.clock_in));
-                }
-                return sum;
-            }, 0);
-            const avgSessionTime = activities.length > 0 ? Math.round(totalTime / activities.length / (1000 * 60)) : 0;
-            const completedTasks = tasks.filter(t => t.state === 'done').length;
-            const completionRate = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
+        function hydrateInlineActionPanel() {
+            const titleInput = document.getElementById('inlineActionTitle');
+            const taskInput = document.getElementById('inlineActionTaskId');
+            const deadlineInput = document.getElementById('inlineActionDeadline');
+            const reminderNoteInput = document.getElementById('inlineActionReminderNote');
+            const reminderWhenInput = document.getElementById('inlineActionReminderWhen');
+            if (!titleInput || !taskInput || !deadlineInput || !reminderNoteInput || !reminderWhenInput) return;
 
-            return `PRODUCTIVITY METRICS:
-- Total tracked time: ${Math.round(totalTime / (1000 * 60 * 60))} hours
-- Average session: ${avgSessionTime} minutes  
-- Completion rate: ${completionRate}%
-- Active projects: ${projects.length}`;
-        }
+            const currentPrompt = (document.getElementById('userPrompt').value || '').trim();
+            const urgentTask = (plannerContext.urgent_tasks || [])[0];
+            const focusedProject = (plannerContext.focused_projects || [])[0];
 
-        function getAdvisoryData() {
-            const lowEnergyTasks = tasks.filter(t => t.energy_level === 1).length;
-            const highEnergyTasks = tasks.filter(t => t.energy_level === 3).length;
-            const noDeadlineTasks = tasks.filter(t => !t.deadline && t.state !== 'done').length;
+            titleInput.value = currentPrompt
+                ? `Action: ${currentPrompt.slice(0, 60)}`
+                : `Priority next step${focusedProject ? ` (${focusedProject.name})` : ''}`;
+            taskInput.value = urgentTask ? String(urgentTask.id) : '';
 
-            return `CURRENT STATE:
-- Low energy tasks: ${lowEnergyTasks}
-- High energy tasks: ${highEnergyTasks}
-- Tasks without deadlines: ${noDeadlineTasks}
-- Active projects: ${projects.length}`;
-        }
-
-        function getGeneralData() {
-            return `OVERVIEW:
-- ${projects.length} projects, ${tasks.length} tasks, ${activities.length} activities
-- Most recent activity: ${activities.length > 0 ? activities[activities.length - 1].description || 'No description' : 'None'}`;
-        }
-
-        function updateModelInfo() {
-            const modelSelect = document.getElementById('modelSelect');
-            const modelInfo = document.getElementById('modelInfo');
-            const modelBaseUrl = document.getElementById('modelBaseUrl');
-            const modelName = document.getElementById('modelName');
-
-            if (modelSelect.value) {
-                const selectedModel = models.find(m => m.api_key == modelSelect.value);
-                if (selectedModel) {
-                    modelBaseUrl.textContent = selectedModel.base_url;
-                    modelName.textContent = selectedModel.name;
-                    modelInfo.style.display = 'block';
-                }
+            if (urgentTask && urgentTask.deadline) {
+                deadlineInput.value = toDatetimeLocalValue(new Date(urgentTask.deadline));
             } else {
-                modelInfo.style.display = 'none';
+                deadlineInput.value = toDatetimeLocalValue(new Date(Date.now() + 24 * 60 * 60 * 1000));
+            }
+
+            reminderNoteInput.value = focusedProject
+                ? `Check progress on ${focusedProject.name}`
+                : 'Check execution progress';
+            reminderWhenInput.value = toDatetimeLocalValue(new Date(Date.now() + 60 * 60 * 1000));
+        }
+
+        function setInlineActionStatus(message, isError = false) {
+            const status = document.getElementById('inlineActionStatus');
+            if (!status) return;
+            status.textContent = message;
+            status.style.color = isError ? '#b42330' : '#4a668b';
+        }
+
+        async function performInlineAction(actionType) {
+            const title = (document.getElementById('inlineActionTitle')?.value || '').trim();
+            const deadlineRaw = document.getElementById('inlineActionDeadline')?.value || '';
+            const taskIdRaw = (document.getElementById('inlineActionTaskId')?.value || '').trim();
+            const reminderNote = (document.getElementById('inlineActionReminderNote')?.value || '').trim();
+            const reminderWhenRaw = document.getElementById('inlineActionReminderWhen')?.value || '';
+
+            const payload = { action_type: actionType };
+            if (actionType === 'create_task') {
+                if (!title) {
+                    setInlineActionStatus('Task title is required.', true);
+                    return;
+                }
+                payload.title = title;
+                payload.project_id = getPreferredProjectId();
+                if (deadlineRaw) {
+                    const parsed = new Date(deadlineRaw);
+                    if (Number.isNaN(parsed.getTime())) {
+                        setInlineActionStatus('Invalid deadline format.', true);
+                        return;
+                    }
+                    payload.deadline = parsed.toISOString();
+                }
+            } else if (actionType === 'reschedule_task') {
+                if (!taskIdRaw || !deadlineRaw) {
+                    setInlineActionStatus('Task ID and deadline are required for reschedule.', true);
+                    return;
+                }
+                payload.task_id = Number(taskIdRaw);
+                const parsed = new Date(deadlineRaw);
+                if (Number.isNaN(parsed.getTime())) {
+                    setInlineActionStatus('Invalid deadline format.', true);
+                    return;
+                }
+                payload.deadline = parsed.toISOString();
+            } else if (actionType === 'add_reminder') {
+                if (!reminderNote || !reminderWhenRaw) {
+                    setInlineActionStatus('Reminder note and time are required.', true);
+                    return;
+                }
+                payload.note = reminderNote;
+                const parsed = new Date(reminderWhenRaw);
+                if (Number.isNaN(parsed.getTime())) {
+                    setInlineActionStatus('Invalid reminder time format.', true);
+                    return;
+                }
+                payload.reminder_when = parsed.toISOString();
+            } else if (actionType === 'start_focus_block') {
+                payload.duration_minutes = 90;
+                if (taskIdRaw) payload.task_id = Number(taskIdRaw);
+            }
+
+            setInlineActionStatus('Applying action...');
+            try {
+                await trackAssistantEvent(
+                    'action_attempted',
+                    'inline_panel',
+                    actionType,
+                    'attempted'
+                );
+                const result = await runAssistantAction(payload);
+                await trackAssistantEvent(
+                    'action_attempted',
+                    'inline_panel',
+                    actionType,
+                    'success'
+                );
+                setInlineActionStatus(result.message || 'Action applied.');
+                hydrateInlineActionPanel();
+            } catch (error) {
+                await trackAssistantEvent(
+                    'action_attempted',
+                    'inline_panel',
+                    actionType,
+                    'failed'
+                );
+                setInlineActionStatus(error.message || 'Action failed.', true);
+            }
+        }
+
+        function getSelectedModelApiKey() {
+            return document.getElementById('modelSelect').value;
+        }
+
+        function getPreferredProjectId() {
+            const focused = plannerContext.focused_projects || [];
+            if (focused.length) return focused[0].id;
+            const active = plannerContext.active_projects || [];
+            return active.length ? active[0].id : null;
+        }
+
+        async function runAssistantAction(payload) {
+            const response = await fetch('/assistant/actions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': getApiKey()
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.detail || 'Action failed');
+            }
+            await loadAssistantContext(getProjectModeValue(), getFocusProjectIdValue());
+            await loadAssistantEffectiveness();
+            renderMetrics();
+            generateSystemPrompt();
+            return data;
+        }
+
+        async function runDailyBriefing() {
+            if (requestInFlight) return;
+            const modelApiKey = getSelectedModelApiKey();
+            if (!modelApiKey) {
+                alert('Please select a model first.');
+                return;
+            }
+            const responseBox = document.getElementById('responseBox');
+            currentRequestController = new AbortController();
+            setRequestInFlight(true);
+            const progress = startAssistantProgress(responseBox);
+            try {
+                const response = await fetch('/assistant/daily-briefing', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': getApiKey()
+                    },
+                    signal: currentRequestController.signal,
+                    body: JSON.stringify({
+                        model_api_key: modelApiKey,
+                        horizon: 'today',
+                        project_mode: getProjectModeValue(),
+                        focus_project_id: getFocusProjectIdValue()
+                    })
+                });
+                const data = await response.json();
+                progress.stop();
+                if (!response.ok) {
+                    responseBox.innerHTML = `<div class="text-danger"><strong>Error:</strong> ${data.detail || 'Failed to generate briefing.'}</div>`;
+                    return;
+                }
+                const badges = [
+                    '<span class="badge-soft">daily briefing</span>',
+                    `<span class="badge-soft">risk context</span>`,
+                    `<span class="badge-soft">${data.meta?.urgent_open_tasks || 0} urgent open</span>`,
+                    `<span class="badge-soft">mode: ${data.meta?.project_mode || getProjectModeValue()}</span>`
+                ].join('');
+                renderMarkdownResult(responseBox, data.briefing, badges);
+            } catch (error) {
+                progress.stop();
+                if (error && error.name === 'AbortError') {
+                    responseBox.innerHTML = `<div class="tiny">Request stopped by user.</div>`;
+                } else {
+                    responseBox.innerHTML = `<div class="text-danger"><strong>Error:</strong> ${error.message}</div>`;
+                }
+            } finally {
+                currentRequestController = null;
+                setRequestInFlight(false);
+            }
+        }
+
+        async function runRecoveryPlan() {
+            if (requestInFlight) return;
+            const modelApiKey = getSelectedModelApiKey();
+            if (!modelApiKey) {
+                alert('Please select a model first.');
+                return;
+            }
+            const responseBox = document.getElementById('responseBox');
+            currentRequestController = new AbortController();
+            setRequestInFlight(true);
+            const progress = startAssistantProgress(responseBox);
+            try {
+                const response = await fetch('/assistant/recovery-plan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': getApiKey()
+                    },
+                    signal: currentRequestController.signal,
+                    body: JSON.stringify({
+                        model_api_key: modelApiKey,
+                        horizon: 'week',
+                        project_mode: getProjectModeValue(),
+                        focus_project_id: getFocusProjectIdValue()
+                    })
+                });
+                const data = await response.json();
+                progress.stop();
+                if (!response.ok) {
+                    responseBox.innerHTML = `<div class="text-danger"><strong>Error:</strong> ${data.detail || 'Failed to generate recovery plan.'}</div>`;
+                    return;
+                }
+                const badges = [
+                    '<span class="badge-soft">recovery mode</span>',
+                    `<span class="badge-soft">risk ${data.meta?.risk_score || 0}/100</span>`,
+                    `<span class="badge-soft">mode: ${data.meta?.project_mode || getProjectModeValue()}</span>`
+                ].join('');
+                renderMarkdownResult(responseBox, data.recovery_plan, badges);
+            } catch (error) {
+                progress.stop();
+                if (error && error.name === 'AbortError') {
+                    responseBox.innerHTML = `<div class="tiny">Request stopped by user.</div>`;
+                } else {
+                    responseBox.innerHTML = `<div class="text-danger"><strong>Error:</strong> ${error.message}</div>`;
+                }
+            } finally {
+                currentRequestController = null;
+                setRequestInFlight(false);
             }
         }
 
         async function sendRequest() {
-            const modelSelect = document.getElementById('modelSelect');
+            if (requestInFlight) return;
+            const modelApiKey = document.getElementById('modelSelect').value;
             const systemPrompt = document.getElementById('systemPrompt').value;
-            const userPrompt = document.getElementById('userPrompt').value;
-            const sendButton = document.getElementById('sendButton');
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            const responseBox = document.getElementById('responseBox');
+            let userPrompt = document.getElementById('userPrompt').value.trim();
             const agenticMode = document.getElementById('agenticMode').checked;
+            const responseBox = document.getElementById('responseBox');
 
-            if (!modelSelect.value) {
-                showToast('Error', 'Please select a model first', 'warning');
+            if (!modelApiKey) {
+                alert('Please select a model first.');
                 return;
             }
-
-            if (!userPrompt.trim()) {
-                showToast('Error', 'Please enter your request', 'warning');
-                return;
+            if (!userPrompt) {
+                if (assistantUIMode === 'simple') {
+                    userPrompt = 'What should I focus on now based on my tasks and projects?';
+                    document.getElementById('userPrompt').value = userPrompt;
+                } else {
+                    alert('Please enter your request.');
+                    return;
+                }
             }
 
-            const selectedModel = models.find(m => m.api_key == modelSelect.value);
-            if (!selectedModel) {
-                showToast('Error', 'Selected model not found', 'danger');
-                return;
-            }
-
-            // Show loading state
-            sendButton.disabled = true;
-            loadingIndicator.style.display = 'block';
-            responseBox.innerHTML = '<div class="text-muted text-center"><div class="spinner-border spinner-border-sm me-2"></div>Processing...</div>';
+            currentRequestController = new AbortController();
+            setRequestInFlight(true);
+            const progress = startAssistantProgress(responseBox);
 
             try {
-                const apiKey = localStorage.getItem('apiKey');
-                let response;
-                
-                if (agenticMode) {
-                    // Use agentic system
-                    response = await fetch('/agentic-query', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-API-Key': apiKey
-                        },
-                        body: JSON.stringify({
-                            model_api_key: selectedModel.api_key,
-                            user_prompt: userPrompt
-                        })
-                    });
-                } else {
-                    // Use traditional system
-                    response = await fetch('/query', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-API-Key': apiKey
-                        },
-                        body: JSON.stringify({
-                            model_api_key: selectedModel.api_key,
-                            system_prompt: systemPrompt,
-                            user_prompt: userPrompt
-                        })
-                    });
-                }
+                await loadAssistantContext(getProjectModeValue(), getFocusProjectIdValue());
+                renderMetrics();
+                generateSystemPrompt();
+                const compactHistory = compactLocalHistory(conversationHistory);
+                const payload = {
+                    model_api_key: modelApiKey,
+                    system_prompt: systemPrompt,
+                    user_prompt: userPrompt,
+                    conversation_history: compactHistory,
+                    project_mode: getProjectModeValue(),
+                    focus_project_id: getFocusProjectIdValue(),
+                    agentic_mode: agenticMode
+                };
 
-                if (response.ok) {
-                    const result = await response.json();
-                    
-                    if (agenticMode) {
-                        // Display agentic response with minimal design
-                        responseBox.innerHTML = `
-                            <div class="ai-response-container agentic-mode">
-                                <div class="ai-response-content" id="ai-response-content">
-                                    ${result.response}
-                                </div>
-                            </div>`;
-                        
-                        // Render markdown in the response
-                        setTimeout(() => {
-                            const contentElement = document.getElementById('ai-response-content');
-                            if (contentElement) {
-                                contentElement.innerHTML = marked.parse(result.response);
-                            }
-                        }, 100);
-                    } else {
-                        // Display traditional response with enhanced UI
-                        responseBox.innerHTML = `
-                            <div class="ai-response-container traditional-mode">
-                                <div class="ai-response-header">
-                                    <div class="d-flex align-items-center">
-                                        <div class="ai-icon me-3">
-                                            <i class="bi bi-robot-fill"></i>
-                                        </div>
-                                        <div>
-                                            <h5 class="mb-1 text-dark fw-bold">AI Response</h5>
-                                            <small class="text-muted">Traditional AI Assistant</small>
-                                        </div>
-                                    </div>
-                                    <div class="response-status">
-                                        <span class="badge bg-success">
-                                            <i class="bi bi-check-circle me-1"></i>Response received
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="ai-response-content" id="ai-response-content-traditional">
-                                    ${result.response}
-                                </div>
-                            </div>`;
-                        
-                        // Render markdown in the traditional response
-                        setTimeout(() => {
-                            const contentElement = document.getElementById('ai-response-content-traditional');
-                            if (contentElement) {
-                                contentElement.innerHTML = marked.parse(result.response);
-                            }
-                        }, 100);
-                    }
-                    showToast('Success', 'Request processed successfully', 'success');
-                } else {
-                    const errorData = await response.json();
-                    responseBox.innerHTML = `
-                        <div class="ai-response-container error-mode">
-                            <div class="ai-response-header error-header">
-                                <div class="d-flex align-items-center">
-                                    <div class="ai-icon me-3">
-                                        <i class="bi bi-exclamation-triangle-fill"></i>
-                                    </div>
-                                    <div>
-                                        <h5 class="mb-1 text-white fw-bold">Error</h5>
-                                        <small class="text-white-50">Request failed</small>
-                                    </div>
-                                </div>
-                                <div class="response-status">
-                                    <span class="badge bg-danger">
-                                        <i class="bi bi-x-circle me-1"></i>Error
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="ai-response-content">
-                                <div class="alert alert-danger border-0 mb-0">
-                                    <i class="bi bi-exclamation-triangle me-2"></i>
-                                    <strong>Error:</strong> ${errorData.detail || 'Failed to process request'}
-                                </div>
-                            </div>
-                        </div>`;
-                    showToast('Error', 'Failed to process request', 'danger');
-                }
-            } catch (error) {
-                console.error('Error sending request:', error);
-                responseBox.innerHTML = `
-                    <div class="ai-response-container error-mode">
-                        <div class="ai-response-header error-header">
-                            <div class="d-flex align-items-center">
-                                <div class="ai-icon me-3">
-                                    <i class="bi bi-exclamation-triangle-fill"></i>
-                                </div>
-                                <div>
-                                    <h5 class="mb-1 text-white fw-bold">Network Error</h5>
-                                    <small class="text-white-50">Connection failed</small>
-                                </div>
-                            </div>
-                            <div class="response-status">
-                                <span class="badge bg-danger">
-                                    <i class="bi bi-wifi-off me-1"></i>Offline
-                                </span>
-                            </div>
-                        </div>
-                        <div class="ai-response-content">
-                            <div class="alert alert-danger border-0 mb-0">
-                                <i class="bi bi-exclamation-triangle me-2"></i>
-                                <strong>Network Error:</strong> ${error.message}
-                            </div>
-                        </div>
-                    </div>`;
-                showToast('Error', 'Failed to send request', 'danger');
-            } finally {
-                // Hide loading state
-                sendButton.disabled = false;
-                loadingIndicator.style.display = 'none';
-            }
-        }
-
-        function showToast(title, message, type = 'info') {
-            const toast = document.getElementById('toast');
-            const toastTitle = document.getElementById('toastTitle');
-            const toastBody = document.getElementById('toastBody');
-            const toastIcon = document.getElementById('toastIcon');
-
-            toastTitle.textContent = title;
-            toastBody.textContent = message;
-            
-            // Set icon based on type
-            toastIcon.className = `bi ${type === 'success' ? 'bi-check-circle text-success' : 
-                                   type === 'danger' ? 'bi-exclamation-triangle text-danger' : 
-                                   type === 'warning' ? 'bi-exclamation-triangle text-warning' : 
-                                   'bi-info-circle text-info'}`;
-
-            const bsToast = new bootstrap.Toast(toast);
-            bsToast.show();
-        }
-
-        function logout() {
-            localStorage.clear();
-            window.location.href = '/';
-        }
-
-        // Timezone management
-        let userTimezone = 'Asia/Tehran'; // Default timezone
-        let availableTimezones = [];
-
-        // Load user timezone
-        async function loadUserTimezone() {
-            try {
-                const apiKey = localStorage.getItem('apiKey');
-                const response = await fetch('/users/timezone', {
+                const response = await fetch('/assistant/stream', {
+                    method: 'POST',
                     headers: {
-                        'X-API-Key': apiKey
-                    }
+                        'Content-Type': 'application/json',
+                        'X-API-Key': getApiKey()
+                    },
+                    signal: currentRequestController.signal,
+                    body: JSON.stringify(payload)
                 });
 
-                if (response.ok) {
+                progress.stop();
+                if (!response.ok) {
                     const data = await response.json();
-                    userTimezone = data.timezone;
-                    availableTimezones = data.available_timezones;
+                    const detail = data && data.detail ? data.detail : 'Request failed.';
+                    responseBox.innerHTML = `<div class="text-danger"><strong>Error:</strong> ${detail}</div>`;
+                    return;
                 }
-            } catch (error) {
-                console.error('Error loading user timezone:', error);
-            }
-        }
 
-        // Open timezone settings modal
-        async function openTimezoneSettings() {
-            console.log('openTimezoneSettings called - version 1.4');
-            // Ensure timezone data is loaded before opening modal
-            if (!availableTimezones || Object.keys(availableTimezones).length === 0) {
-                console.log('Timezone data not loaded, loading now...');
-                await loadUserTimezone();
-            }
-            
-            const modal = new bootstrap.Modal(document.getElementById('timezoneSettingsModal'));
-            populateTimezoneCountrySelect();
-            setupTimezoneEventListeners(); // Set up event listeners after modal is opened
-            modal.show();
-        }
+                let accumulated = '';
+                let streamMeta = {};
+                renderMarkdownResult(responseBox, '', '', false);
+                const responseContent = document.getElementById('responseContent');
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
 
-        // Populate timezone country select dropdown
-        function populateTimezoneCountrySelect() {
-            const countrySelect = document.getElementById('timezoneCountrySelect');
-            const citySelect = document.getElementById('timezoneCitySelect');
-            
-            // Clear both selects
-            countrySelect.innerHTML = '<option value="">Select a country</option>';
-            citySelect.innerHTML = '<option value="">Select a country first</option>';
-            citySelect.disabled = true;
-            
-            if (!availableTimezones || typeof availableTimezones !== 'object') {
-                console.error('Available timezones is not an object:', availableTimezones);
-                return;
-            }
-            
-            // Add countries to the dropdown
-            Object.keys(availableTimezones).forEach(country => {
-                const option = document.createElement('option');
-                option.value = country;
-                option.textContent = country;
-                countrySelect.appendChild(option);
-            });
-            
-            // Try to pre-select the current user's country
-            const currentUserTimezone = userTimezone;
-            if (currentUserTimezone) {
-                for (const [country, cities] of Object.entries(availableTimezones)) {
-                    for (const city of cities) {
-                        if (city.value === currentUserTimezone) {
-                            countrySelect.value = country;
-                            populateTimezoneCitySelect(country);
-                            // Find and select the current city
-                            for (const cityOption of citySelect.options) {
-                                if (cityOption.value === currentUserTimezone) {
-                                    cityOption.selected = true;
-                                    break;
-                                }
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const events = buffer.split('\n\n');
+                    buffer = events.pop() || '';
+
+                    for (const eventBlock of events) {
+                        if (!eventBlock.trim()) continue;
+                        let eventType = 'message';
+                        let dataLine = '';
+                        for (const line of eventBlock.split('\n')) {
+                            if (line.startsWith('event:')) eventType = line.slice(6).trim();
+                            if (line.startsWith('data:')) dataLine += line.slice(5).trim();
+                        }
+                        if (!dataLine) continue;
+                        let parsed = {};
+                        try {
+                            parsed = JSON.parse(dataLine);
+                        } catch {
+                            parsed = {};
+                        }
+
+                        if (eventType === 'meta') {
+                            streamMeta = parsed || {};
+                            const badgeData = {
+                                agent_used: streamMeta.agent_used || (agenticMode ? 'agentic' : 'single-model'),
+                                meta: streamMeta,
+                            };
+                            document.querySelector('.response-meta .d-flex').innerHTML =
+                                buildResponseMetaBadges(agenticMode, badgeData, modelApiKey);
+                        } else if (eventType === 'delta') {
+                            const piece = parsed.text || '';
+                            accumulated += piece;
+                            responseContent.innerHTML = marked.parse(accumulated || '');
+                            responseContent.scrollTop = responseContent.scrollHeight;
+                        } else if (eventType === 'error') {
+                    throw new Error(parsed.detail || 'Streaming failed.');
+                        } else if (eventType === 'done') {
+                            if (parsed.response && !accumulated) {
+                                accumulated = parsed.response;
+                                responseContent.innerHTML = marked.parse(accumulated || '');
                             }
-                            break;
                         }
                     }
                 }
+
+                if (accumulated && !responseContent.innerHTML.trim()) {
+                    responseContent.innerHTML = marked.parse(accumulated);
+                }
+
+                conversationHistory.push({ role: 'user', content: userPrompt });
+                conversationHistory.push({ role: 'assistant', content: accumulated || '' });
+                conversationHistory = compactLocalHistory(conversationHistory);
+                persistConversationHistory();
+            } catch (error) {
+                progress.stop();
+                if (error && error.name === 'AbortError') {
+                    responseBox.innerHTML = `<div class="tiny">Request stopped by user.</div>`;
+                } else {
+                    responseBox.innerHTML = `<div class="text-danger"><strong>Error:</strong> ${error.message}</div>`;
+                }
+            } finally {
+                currentRequestController = null;
+                setRequestInFlight(false);
             }
-            
-            updateTimezonePreview();
         }
 
-        // Populate timezone city select dropdown
-        function populateTimezoneCitySelect(country) {
-            const citySelect = document.getElementById('timezoneCitySelect');
-            citySelect.innerHTML = '<option value="">Select a city</option>';
-            
-            if (!country || !availableTimezones[country]) {
-                citySelect.disabled = true;
-                return;
-            }
-            
-            citySelect.disabled = false;
-            
-            availableTimezones[country].forEach(city => {
-                const option = document.createElement('option');
-                option.value = city.value;
-                option.textContent = city.label;
-                citySelect.appendChild(option);
+        function logout() {
+            localStorage.removeItem('apiKey');
+            localStorage.removeItem('username');
+            localStorage.removeItem('displayName');
+            window.location.href = '/login';
+        }
+
+        async function loadTimezoneData() {
+            const response = await fetch('/users/timezone', {
+                headers: { 'X-API-Key': getApiKey() }
             });
+            if (!response.ok) return;
+
+            const data = await response.json();
+            availableTimezones = data.available_timezones || {};
+            currentTimezone = data.timezone || currentTimezone;
+            document.getElementById('currentTimezoneText').textContent = currentTimezone;
+
+            const countrySelect = document.getElementById('countrySelect');
+            countrySelect.innerHTML = Object.keys(availableTimezones)
+                .map(c => `<option value="${c}">${c}</option>`)
+                .join('');
+
+            let initialCountry = Object.keys(availableTimezones)[0] || '';
+            for (const country of Object.keys(availableTimezones)) {
+                if ((availableTimezones[country] || []).includes(currentTimezone)) {
+                    initialCountry = country;
+                    break;
+                }
+            }
+
+            countrySelect.value = initialCountry;
+            populateCities(initialCountry, currentTimezone);
+            countrySelect.onchange = () => populateCities(countrySelect.value, null);
         }
 
-        // Set up timezone event listeners
-        function setupTimezoneEventListeners() {
-            const countrySelect = document.getElementById('timezoneCountrySelect');
-            const citySelect = document.getElementById('timezoneCitySelect');
-            
-            if (countrySelect) {
-                countrySelect.addEventListener('change', function() {
-                    const selectedCountry = this.value;
-                    populateTimezoneCitySelect(selectedCountry);
-                    updateTimezonePreview();
-                });
-            }
-            
-            if (citySelect) {
-                citySelect.addEventListener('change', updateTimezonePreview);
-            }
-        }
-
-        // Update timezone preview
-        function updateTimezonePreview() {
-            const citySelect = document.getElementById('timezoneCitySelect');
-            const preview = document.getElementById('timezonePreview');
-            const selectedTimezone = citySelect.value;
-            
-            if (selectedTimezone) {
-                const now = new Date();
-                const timeString = now.toLocaleTimeString('en-US', {
-                    hour12: false,
-                    timeZone: selectedTimezone
-                });
-                const timezoneAbbr = getTimezoneAbbreviation(selectedTimezone);
-                preview.textContent = `${timeString} ${timezoneAbbr}`;
-            } else {
-                preview.textContent = '--:--';
+        function populateCities(country, selectedTimezone) {
+            const citySelect = document.getElementById('citySelect');
+            const zones = availableTimezones[country] || [];
+            citySelect.innerHTML = zones.map(z => `<option value="${z}">${z}</option>`).join('');
+            if (selectedTimezone && zones.includes(selectedTimezone)) {
+                citySelect.value = selectedTimezone;
             }
         }
 
-        // Get timezone abbreviation
-        function getTimezoneAbbreviation(timezone) {
-            const date = new Date();
-            const options = { timeZoneName: 'short' };
-            return date.toLocaleDateString('en-US', options).split(', ')[1];
+        function openTimezoneSettings() {
+            const modal = new bootstrap.Modal(document.getElementById('timezoneModal'));
+            modal.show();
         }
 
-        // Update user timezone
-        async function updateTimezone() {
-            const citySelect = document.getElementById('timezoneCitySelect');
-            const newTimezone = citySelect.value;
-            
-            if (!newTimezone) {
-                showToast('Validation Error', 'Please select a city', 'warning');
+        async function saveTimezone() {
+            const timezone = document.getElementById('citySelect').value;
+            const response = await fetch('/users/timezone', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': getApiKey()
+                },
+                body: JSON.stringify({ timezone })
+            });
+
+            if (!response.ok) {
+                alert('Failed to update timezone.');
                 return;
             }
+
+            currentTimezone = timezone;
+            document.getElementById('currentTimezoneText').textContent = currentTimezone;
+            bootstrap.Modal.getInstance(document.getElementById('timezoneModal')).hide();
+            generateSystemPrompt();
+        }
+
+        async function resetAssistantMemory() {
+            const agenticMode = document.getElementById('agenticMode').checked;
+            const mode = agenticMode ? 'agentic' : 'assistant';
+            const ok = confirm(`Reset ${mode} memory? This clears server + local conversation history for this mode.`);
+            if (!ok) return;
 
             try {
-                const apiKey = localStorage.getItem('apiKey');
-                const response = await fetch('/users/timezone', {
+                const response = await fetch('/assistant-memory/reset', {
                     method: 'POST',
                     headers: {
-                        'X-API-Key': apiKey,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-API-Key': getApiKey()
                     },
-                    body: JSON.stringify({
-                        timezone: newTimezone
-                    })
+                    body: JSON.stringify({ mode })
                 });
-
-                if (response.ok) {
-                    userTimezone = newTimezone;
-                    showToast('Success!', 'Timezone updated successfully!', 'success');
-                    
-                    // Close modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('timezoneSettingsModal'));
-                    modal.hide();
-                } else {
-                    const errorData = await response.json();
-                    showToast('Error', `Failed to update timezone: ${errorData.detail || 'Unknown error'}`, 'danger');
+                const data = await response.json();
+                if (!response.ok) {
+                    alert(data.detail || 'Failed to reset memory.');
+                    return;
                 }
+
+                conversationHistory = [];
+                persistConversationHistory();
+                document.getElementById('responseBox').innerHTML = `
+                    <div class="response-empty">
+                        <div>
+                            <i class="bi bi-stars" style="font-size: 2rem; color: #7fa8f7;"></i>
+                            <div class="mt-2">Memory reset complete.</div>
+                            <div class="tiny">Start a fresh conversation.</div>
+                        </div>
+                    </div>
+                `;
             } catch (error) {
-                console.error('Error updating timezone:', error);
-                showToast('Error', `Error updating timezone: ${error.message}`, 'danger');
+                alert(`Failed to reset memory: ${error.message}`);
             }
         }
-
-        // Load timezone on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(() => {
-                loadUserTimezone();
-            }, 1000);
-        });
     </script>
-
-    <!-- Timezone Settings Modal -->
-    <div class="modal fade" id="timezoneSettingsModal" tabindex="-1" aria-labelledby="timezoneSettingsModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="timezoneSettingsModalLabel">
-                        <i class="bi bi-gear me-2"></i>
-                        Timezone Settings
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="timezoneSettingsForm">
-                        <div class="mb-3">
-                            <label for="timezoneCountrySelect" class="form-label">Select Country</label>
-                            <select class="form-select" id="timezoneCountrySelect" required>
-                                <option value="">Loading countries...</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="timezoneCitySelect" class="form-label">Select City</label>
-                            <select class="form-select" id="timezoneCitySelect" required disabled>
-                                <option value="">Select a country first</option>
-                            </select>
-                            <div class="form-text">This will affect how times are displayed throughout the app.</div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Current Time in Selected Timezone</label>
-                            <div class="form-control-plaintext" id="timezonePreview">--:--</div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="updateTimezone()">
-                        <i class="bi bi-check-circle me-1"></i>
-                        Save Timezone
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
 </body>
-</html> 
+</html>

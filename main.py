@@ -5,7 +5,17 @@ from fastapi.staticfiles import StaticFiles
 from datetime import datetime, date, timezone
 from typing import Optional
 from pydantic import BaseModel
+from core.crewai_env import disable_crewai_telemetry
 from core.date import DateResponse, format_date_helper
+from core.fastapi_starlette_compat import (
+    patch_fastapi_middleware_unpack_for_starlette,
+    patch_starlette_router_for_fastapi,
+)
+
+patch_starlette_router_for_fastapi()
+patch_fastapi_middleware_unpack_for_starlette()
+disable_crewai_telemetry()
+
 from routers import date
 from routers import user as user_router
 from routers import models as models_router
@@ -19,7 +29,7 @@ from routers import assistant as assistant_router
 from routers import agentic_assistant as agentic_router
 from routers.notes import router as notes_router
 from core.database import engine, Base, get_db
-from models import user, projects, models, keys, tasks, progress, reminders
+from models import user, projects, models, keys, tasks, progress, reminders, assistant_memory, assistant_events
 from sqlalchemy.orm import Session
 from datetime import datetime as dt
 from core.auth import check_user_auth

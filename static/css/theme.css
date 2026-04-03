@@ -1,0 +1,152 @@
+:root {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] body {
+  background: radial-gradient(circle at 10% 10%, #1d2d4f 0%, transparent 35%),
+              radial-gradient(circle at 85% 20%, #1a4c4a 0%, transparent 30%),
+              linear-gradient(160deg, #0c111b 0%, #101827 45%, #0f1724 100%) !important;
+  color: #e7edf8 !important;
+}
+
+:root[data-theme="dark"] .dashboard-header,
+:root[data-theme="dark"] .assistant-header,
+:root[data-theme="dark"] .report-header,
+:root[data-theme="dark"] .navbar,
+:root[data-theme="dark"] .dashboard-header.mb-3 {
+  background: rgba(14, 22, 35, 0.86) !important;
+  border-bottom-color: rgba(129, 155, 197, 0.25) !important;
+  box-shadow: 0 10px 30px -24px rgba(0, 0, 0, 0.85) !important;
+}
+
+:root[data-theme="dark"] .header-title,
+:root[data-theme="dark"] .header-subtitle,
+:root[data-theme="dark"] .navbar-brand,
+:root[data-theme="dark"] h1,
+:root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3,
+:root[data-theme="dark"] h4,
+:root[data-theme="dark"] h5,
+:root[data-theme="dark"] h6,
+:root[data-theme="dark"] label,
+:root[data-theme="dark"] .form-label {
+  color: #e6eefb !important;
+}
+
+:root[data-theme="dark"] .text-muted,
+:root[data-theme="dark"] .tiny,
+:root[data-theme="dark"] small {
+  color: #9fb1ce !important;
+}
+
+:root[data-theme="dark"] .card,
+:root[data-theme="dark"] .panel,
+:root[data-theme="dark"] .modal-content,
+:root[data-theme="dark"] .kanban-card,
+:root[data-theme="dark"] .kanban-column,
+:root[data-theme="dark"] .kanban-project-box,
+:root[data-theme="dark"] .feature-card,
+:root[data-theme="dark"] .login-card,
+:root[data-theme="dark"] .register-card {
+  background: rgba(19, 29, 46, 0.92) !important;
+  border: 1px solid rgba(110, 141, 185, 0.24) !important;
+  box-shadow: 0 22px 40px -30px rgba(0, 0, 0, 0.95) !important;
+}
+
+:root[data-theme="dark"] .card-header,
+:root[data-theme="dark"] .modal-header,
+:root[data-theme="dark"] .offcanvas-header {
+  background: rgba(21, 34, 53, 0.92) !important;
+  border-bottom-color: rgba(108, 137, 176, 0.3) !important;
+}
+
+:root[data-theme="dark"] .offcanvas,
+:root[data-theme="dark"] .offcanvas-body,
+:root[data-theme="dark"] .modal-body,
+:root[data-theme="dark"] .modal-footer,
+:root[data-theme="dark"] .response-wrap,
+:root[data-theme="dark"] .response-box {
+  background: rgba(17, 27, 43, 0.94) !important;
+  color: #e7edf8 !important;
+  border-color: rgba(108, 137, 176, 0.3) !important;
+}
+
+:root[data-theme="dark"] .form-control,
+:root[data-theme="dark"] .form-select,
+:root[data-theme="dark"] textarea,
+:root[data-theme="dark"] input {
+  background: rgba(13, 21, 34, 0.95) !important;
+  color: #eaf1ff !important;
+  border-color: rgba(97, 129, 172, 0.45) !important;
+}
+
+:root[data-theme="dark"] .form-control:focus,
+:root[data-theme="dark"] .form-select:focus {
+  border-color: #78a8ff !important;
+  box-shadow: 0 0 0 0.2rem rgba(71, 125, 237, 0.22) !important;
+}
+
+:root[data-theme="dark"] .nav-btn,
+:root[data-theme="dark"] .btn,
+:root[data-theme="dark"] .prompt-pill {
+  border-color: rgba(111, 145, 191, 0.45) !important;
+}
+
+:root[data-theme="dark"] .nav-btn {
+  background: rgba(27, 40, 62, 0.88) !important;
+  color: #dce8ff !important;
+}
+
+:root[data-theme="dark"] .table,
+:root[data-theme="dark"] .table td,
+:root[data-theme="dark"] .table th,
+:root[data-theme="dark"] .list-group-item {
+  background: rgba(19, 29, 46, 0.92) !important;
+  color: #e7edf8 !important;
+  border-color: rgba(104, 132, 171, 0.3) !important;
+}
+
+:root[data-theme="dark"] a {
+  color: #8cb6ff;
+}
+
+:root[data-theme="dark"] .calendar-grid,
+:root[data-theme="dark"] .calendar-sidebar,
+:root[data-theme="dark"] .calendar-day,
+:root[data-theme="dark"] .smart-card,
+:root[data-theme="dark"] .schedule-item,
+:root[data-theme="dark"] .reminder-item,
+:root[data-theme="dark"] .kanban-task,
+:root[data-theme="dark"] .upcoming-activity-item {
+  background: rgba(21, 34, 53, 0.93) !important;
+  border-color: rgba(108, 137, 176, 0.35) !important;
+  color: #e7edf8 !important;
+}
+
+:root[data-theme="dark"] .calendar-day.today {
+  background: linear-gradient(180deg, #203a64 0%, #1b304f 100%) !important;
+}
+
+.theme-fab {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1200;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(145, 166, 201, 0.5);
+  background: rgba(255, 255, 255, 0.9);
+  color: #183764;
+  box-shadow: 0 8px 24px -14px rgba(20, 43, 78, 0.7);
+}
+
+:root[data-theme="dark"] .theme-fab {
+  background: rgba(21, 34, 53, 0.96);
+  color: #dce8ff;
+  border-color: rgba(111, 145, 191, 0.5);
+}
