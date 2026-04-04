@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, timedelta
 from typing import AsyncIterator, Dict, List, Optional
+from urllib.parse import urlparse
 
 from core.crewai_env import disable_crewai_telemetry
 
@@ -270,9 +271,26 @@ async def _stream_openai_compatible_completion(
             or ""
         )
 
-    base = (model.base_url or "").rstrip("/")
+    def _base_candidates(raw_base: str) -> List[str]:
+        trimmed = (raw_base or "").strip().rstrip("/")
+        if not trimmed:
+            return []
+
+        parsed = urlparse(trimmed)
+        if not parsed.scheme:
+            host = trimmed.lstrip("/")
+            return [f"http://{host}", f"https://{host}"]
+
+        if parsed.scheme == "http":
+            return [trimmed, f"https://{trimmed[len('http://') :]}"]
+        if parsed.scheme == "https":
+            return [trimmed, f"http://{trimmed[len('https://') :]}"]
+        return [trimmed]
+
+    base = (model.base_url or "").strip().rstrip("/")
     if not base:
         raise HTTPException(status_code=400, detail="Model base_url is empty")
+    bases = _base_candidates(base)
 
     auth_headers = {
         "Content-Type": "application/json",
@@ -280,46 +298,87 @@ async def _stream_openai_compatible_completion(
     }
 
     prompt_text = "\n".join(f"{m.get('role', 'user')}: {m.get('content', '')}" for m in messages)
-    ollama_base = base[:-3] if base.endswith("/v1") else base
     ollama_model = model.name.split("/")[-1] if "/" in model.name else model.name
 
-    candidates = [
-        {
-            "kind": "openai_chat",
-            "url": f"{base}/chat/completions",
-            "headers": auth_headers,
-            "payload": {
-                "model": model.name,
-                "messages": messages,
-                "temperature": temperature,
-                "stream": True,
-            },
-        },
-        {
-            "kind": "openai_completions",
-            "url": f"{base}/completions",
-            "headers": auth_headers,
-            "payload": {
-                "model": model.name,
-                "prompt": prompt_text,
-                "temperature": temperature,
-                "stream": True,
-            },
-        },
-        {
-            "kind": "ollama_chat",
-            "url": f"{ollama_base}/api/chat",
-            "headers": {"Content-Type": "application/json"},
-            "payload": {
-                "model": ollama_model,
-                "messages": messages,
-                "stream": True,
-            },
-        },
-    ]
+    candidate_pool = []
+    for candidate_base in bases:
+        ollama_base = candidate_base[:-3] if candidate_base.endswith("/v1") else candidate_base
+        openai_base = candidate_base if candidate_base.endswith("/v1") else f"{candidate_base}/v1"
+        candidate_pool.extend(
+            [
+                {
+                    "kind": "openai_chat",
+                    "url": f"{candidate_base}/chat/completions",
+                    "headers": auth_headers,
+                    "payload": {
+                        "model": model.name,
+                        "messages": messages,
+                        "temperature": temperature,
+                        "stream": True,
+                    },
+                },
+                {
+                    "kind": "openai_completions",
+                    "url": f"{candidate_base}/completions",
+                    "headers": auth_headers,
+                    "payload": {
+                        "model": model.name,
+                        "prompt": prompt_text,
+                        "temperature": temperature,
+                        "stream": True,
+                    },
+                },
+                {
+                    "kind": "openai_chat",
+                    "url": f"{openai_base}/chat/completions",
+                    "headers": auth_headers,
+                    "payload": {
+                        "model": model.name,
+                        "messages": messages,
+                        "temperature": temperature,
+                        "stream": True,
+                    },
+                },
+                {
+                    "kind": "openai_completions",
+                    "url": f"{openai_base}/completions",
+                    "headers": auth_headers,
+                    "payload": {
+                        "model": model.name,
+                        "prompt": prompt_text,
+                        "temperature": temperature,
+                        "stream": True,
+                    },
+                },
+                {
+                    "kind": "ollama_chat",
+                    "url": f"{ollama_base}/api/chat",
+                    "headers": {"Content-Type": "application/json"},
+                    "payload": {
+                        "model": ollama_model,
+                        "messages": messages,
+                        "stream": True,
+                    },
+                },
+            ]
+        )
+    # Deduplicate candidate URLs while preserving order.
+    seen_urls = set()
+    candidates = []
+    for candidate in candidate_pool:
+        url = candidate["url"]
+        if url in seen_urls:
+            continue
+        seen_urls.add(url)
+        candidates.append(candidate)
 
     last_error = None
-    async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, read=120.0)) as client:
+    attempt_errors = []
+    async with httpx.AsyncClient(
+        timeout=httpx.Timeout(120.0, read=120.0),
+        trust_env=False,
+        follow_redirects=True,
+    ) as client:
         for candidate in candidates:
             try:
                 async with client.stream(
@@ -330,6 +389,7 @@ async def _stream_openai_compatible_completion(
                 ) as response:
                     if response.status_code == 404:
                         last_error = f"404 at {candidate['url']}"
+                        attempt_errors.append(last_error)
                         continue
                     response.raise_for_status()
 
@@ -366,14 +426,16 @@ async def _stream_openai_compatible_completion(
                                 break
                         return
             except Exception as exc:
-                last_error = str(exc)
+                last_error = f"{type(exc).__name__}: {exc}"
+                attempt_errors.append(f"{candidate['url']} -> {last_error}")
                 continue
 
     raise HTTPException(
         status_code=502,
         detail=(
             "Streaming failed: no compatible endpoint found for this model/base_url. "
-            f"Last error: {last_error or 'unknown'}"
+            f"Last error: {last_error or 'unknown'}. "
+            f"Tried: {' | '.join(attempt_errors[-4:]) if attempt_errors else 'no candidates'}"
         ),
     )
 

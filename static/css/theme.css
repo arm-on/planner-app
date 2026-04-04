@@ -6,6 +6,98 @@
   color-scheme: dark;
 }
 
+/* Clean website-like top menu across all app pages. */
+.dashboard-header .nav-buttons,
+.assistant-header .nav-buttons,
+.report-header .nav-buttons {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.15rem !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.dashboard-header .nav-btn,
+.assistant-header .nav-btn,
+.report-header .nav-btn {
+  margin: 0 !important;
+  min-height: 38px !important;
+  padding: 0.5rem 0.72rem !important;
+  border-radius: 8px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #1e2e47 !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+}
+
+.dashboard-header .nav-btn:hover,
+.assistant-header .nav-btn:hover,
+.report-header .nav-btn:hover {
+  transform: none !important;
+  border: 0 !important;
+  background: rgba(17, 80, 190, 0.08) !important;
+  box-shadow: none !important;
+  color: #103672 !important;
+}
+
+.dashboard-header .top-menu-collapse,
+.assistant-header .top-menu-collapse,
+.report-header .top-menu-collapse {
+  justify-content: flex-end !important;
+}
+
+/* Cancel page-specific gradient button skins to keep a normal nav. */
+.dashboard-header .nav-btn.timezone-btn,
+.dashboard-header .nav-btn.dashboard-btn,
+.dashboard-header .nav-btn.reports-btn,
+.dashboard-header .nav-btn.assistant-btn,
+.dashboard-header .nav-btn.kanban-btn,
+.dashboard-header .nav-btn.logout-btn,
+.assistant-header .nav-btn.timezone-btn,
+.assistant-header .nav-btn.dashboard-btn,
+.assistant-header .nav-btn.reports-btn,
+.assistant-header .nav-btn.assistant-btn,
+.assistant-header .nav-btn.kanban-btn,
+.assistant-header .nav-btn.logout-btn,
+.report-header .nav-btn.timezone-btn,
+.report-header .nav-btn.dashboard-btn,
+.report-header .nav-btn.reports-btn,
+.report-header .nav-btn.assistant-btn,
+.report-header .nav-btn.kanban-btn,
+.report-header .nav-btn.logout-btn {
+  background: transparent !important;
+}
+
+:root[data-theme="dark"] .dashboard-header .nav-buttons,
+:root[data-theme="dark"] .assistant-header .nav-buttons,
+:root[data-theme="dark"] .report-header .nav-buttons {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme="dark"] .dashboard-header .nav-btn,
+:root[data-theme="dark"] .assistant-header .nav-btn,
+:root[data-theme="dark"] .report-header .nav-btn {
+  background: transparent !important;
+  color: #d7e5ff !important;
+}
+
+:root[data-theme="dark"] .dashboard-header .nav-btn:hover,
+:root[data-theme="dark"] .assistant-header .nav-btn:hover,
+:root[data-theme="dark"] .report-header .nav-btn:hover {
+  background: rgba(109, 148, 214, 0.16) !important;
+  color: #f1f6ff !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
 /* Keep page gradients continuous on long pages (no mid-page seam). */
 body {
   background-repeat: no-repeat !important;
@@ -123,6 +215,7 @@ body {
 
 :root[data-theme="dark"] .calendar-grid,
 :root[data-theme="dark"] .calendar-sidebar,
+:root[data-theme="dark"] .calendar-weekdays,
 :root[data-theme="dark"] .calendar-day,
 :root[data-theme="dark"] .smart-card,
 :root[data-theme="dark"] .schedule-item,
@@ -134,6 +227,15 @@ body {
   color: #e7edf8 !important;
 }
 
+:root[data-theme="dark"] .calendar-weekdays {
+  border-bottom-color: rgba(108, 137, 176, 0.35) !important;
+}
+
+:root[data-theme="dark"] .calendar-weekday {
+  background: rgba(17, 27, 43, 0.96) !important;
+  color: #cddcf6 !important;
+}
+
 :root[data-theme="dark"] .calendar-day.today {
   background: linear-gradient(180deg, #203a64 0%, #1b304f 100%) !important;
 }
@@ -143,6 +245,7 @@ body {
 :root[data-theme="dark"] .response-content p,
 :root[data-theme="dark"] .response-content li,
 :root[data-theme="dark"] .response-content strong,
+:root[data-theme="dark"] .upcoming-activity-title,
 :root[data-theme="dark"] .panel-title,
 :root[data-theme="dark"] .smart-value,
 :root[data-theme="dark"] .smart-label,
@@ -297,6 +400,62 @@ body {
 .app-footer {
   font-size: 0.9rem;
   letter-spacing: 0.01em;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header .top-menu-collapse.collapse:not(.show),
+  .assistant-header .top-menu-collapse.collapse:not(.show),
+  .report-header .top-menu-collapse.collapse:not(.show) {
+    display: none !important;
+  }
+
+  .dashboard-header .top-menu-collapse.collapse.show,
+  .assistant-header .top-menu-collapse.collapse.show,
+  .report-header .top-menu-collapse.collapse.show {
+    display: block !important;
+  }
+
+  .dashboard-header .top-menu-collapse,
+  .assistant-header .top-menu-collapse,
+  .report-header .top-menu-collapse {
+    justify-content: flex-start !important;
+  }
+
+  .dashboard-header .top-menu-collapse .nav-buttons,
+  .assistant-header .top-menu-collapse .nav-buttons,
+  .report-header .top-menu-collapse .nav-buttons {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    gap: 0.15rem !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .dashboard-header .top-menu-collapse .nav-btn,
+  .assistant-header .top-menu-collapse .nav-btn,
+  .report-header .top-menu-collapse .nav-btn {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .dashboard-header .top-menu-collapse,
+  .assistant-header .top-menu-collapse,
+  .report-header .top-menu-collapse {
+    display: block !important;
+  }
+
+  .dashboard-header .top-menu-collapse .nav-buttons,
+  .assistant-header .top-menu-collapse .nav-buttons,
+  .report-header .top-menu-collapse .nav-buttons {
+    flex-direction: row !important;
+    align-items: center !important;
+  }
 }
 
 :root[data-theme="dark"] .app-footer {

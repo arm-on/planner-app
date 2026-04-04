@@ -1568,6 +1568,9 @@ function displayModelsList() {
                         <div class="d-flex justify-content-between align-items-center">
                             <small class="text-muted">API Key: ${model.api_key.substring(0, 8)}...</small>
                             <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary btn-sm" onclick="testSavedModelConnection('${encodeURIComponent(model.api_key)}')" title="Test Connection">
+                                    <i class="bi bi-broadcast-pin"></i>
+                                </button>
                                 <button class="btn btn-outline-warning btn-sm" onclick="editModel('${model.api_key}')" title="Edit Model">
                                     <i class="bi bi-pencil"></i>
                                 </button>
@@ -1584,6 +1587,92 @@ function displayModelsList() {
     html += '</div>';
     
     modelsListDiv.innerHTML = html;
+}
+
+function renderModelConnectionResult(result, isError = false) {
+    const resultBox = document.getElementById('modelConnectionResult');
+    if (!resultBox) return;
+    const cls = isError ? 'alert-danger' : 'alert-info';
+    resultBox.innerHTML = `<div class="alert ${cls} py-2 mb-0">${result}</div>`;
+}
+
+async function testModelConnectionFromForm() {
+    const name = document.getElementById('modelName').value.trim();
+    const baseUrl = document.getElementById('modelBaseUrl').value.trim();
+    const apiKey = document.getElementById('modelApiKey').value.trim();
+
+    if (!name || !baseUrl) {
+        renderModelConnectionResult('Please enter model name and base URL first.', true);
+        return;
+    }
+
+    renderModelConnectionResult('Testing connection... this can take a few seconds.');
+
+    try {
+        const userApiKey = localStorage.getItem('apiKey');
+        const response = await fetch('/models/test-connection', {
+            method: 'POST',
+            headers: {
+                'X-API-Key': userApiKey,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model_name: name,
+                base_url: baseUrl,
+                api_key: apiKey
+            })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            renderModelConnectionResult(`Test failed: ${data.detail || 'Unknown error'}`, true);
+            return;
+        }
+        if (data.ok) {
+            const c = data.compatible || {};
+            const mode = c.health === 'ok' ? 'ready' : 'reachable';
+            renderModelConnectionResult(`Connection ${mode}. Endpoint: ${c.url} (status ${c.status}).`);
+        } else {
+            const last = (data.tried || []).slice(-1)[0];
+            const detail = last ? (last.error || `status ${last.status}`) : 'unknown';
+            renderModelConnectionResult(`No compatible endpoint found. Last attempt: ${detail}`, true);
+        }
+    } catch (error) {
+        renderModelConnectionResult(`Connection test error: ${error.message}`, true);
+    }
+}
+
+async function testSavedModelConnection(encodedApiKey) {
+    const modelApiKey = decodeURIComponent(encodedApiKey);
+    try {
+        showToast('info', 'Testing Model', 'Checking model connection...');
+        const userApiKey = localStorage.getItem('apiKey');
+        const response = await fetch('/models/test-connection', {
+            method: 'POST',
+            headers: {
+                'X-API-Key': userApiKey,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ model_api_key: modelApiKey })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            showToast('error', 'Connection Test Failed', data.detail || 'Unknown error');
+            return;
+        }
+        if (data.ok) {
+            const c = data.compatible || {};
+            const msg = c.health === 'ok'
+                ? `Connected successfully via ${c.url}`
+                : `Endpoint reachable via ${c.url} (status ${c.status})`;
+            showToast('success', 'Model Connection', msg, 6500);
+        } else {
+            const last = (data.tried || []).slice(-1)[0];
+            const msg = last ? (last.error || `status ${last.status}`) : 'No details';
+            showToast('error', 'Model Connection Failed', msg, 7500);
+        }
+    } catch (error) {
+        showToast('error', 'Model Connection Error', error.message, 7000);
+    }
 }
 
 // Display projects list
@@ -1878,12 +1967,16 @@ function populateParentTaskFilter() {
 function showCreateModelForm() {
     document.getElementById('createModelForm').style.display = 'block';
     document.getElementById('modelsList').style.display = 'none';
+    const result = document.getElementById('modelConnectionResult');
+    if (result) result.innerHTML = '';
 }
 
 function hideCreateModelForm() {
     document.getElementById('createModelForm').style.display = 'none';
     document.getElementById('modelsList').style.display = 'block';
     document.getElementById('newModelForm').reset();
+    const result = document.getElementById('modelConnectionResult');
+    if (result) result.innerHTML = '';
 }
 
 // Model Edit/Delete Functions
@@ -4527,8 +4620,6 @@ const activityProjectSelect = document.getElementById('activityProject');
 if (activityProjectSelect) {
     activityProjectSelect.addEventListener('change', populateTaskSelect);
 }
-
-
 
 
 

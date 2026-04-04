@@ -84,9 +84,6 @@
                         <div class="card-body">
                             <div class="d-flex flex-column flex-md-row align-items-center justify-content-between">
                                 <div class="d-flex align-items-center mb-3 mb-md-0">
-                                    <div style="background: #fff; border: 1.5px solid #e3e7f0; border-radius: 50%; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
-                                        <i class="bi bi-play-circle" style="font-size: 2rem; color: #3a4a6b;"></i>
-                                    </div>
                                     <div>
                                         <h4 class="mb-0" style="font-weight: 700; letter-spacing: 0.5px; color: #222;">Current Activity</h4>
                                         <div id="currentActivityInfo" style="font-size: 1.1rem; font-weight: 400; color: #444;">
@@ -542,6 +539,13 @@
                                         <label for="modelApiKey" class="form-label">API Key</label>
                                         <input type="text" class="form-control" id="modelApiKey" required>
                                     </div>
+                                    <div class="mb-3 d-flex align-items-center gap-2">
+                                        <button type="button" class="btn btn-outline-primary" onclick="testModelConnectionFromForm()">
+                                            <i class="bi bi-broadcast-pin me-2"></i>Test Connection
+                                        </button>
+                                        <small class="text-muted">Checks http/https and endpoint variants automatically.</small>
+                                    </div>
+                                    <div id="modelConnectionResult" class="mb-3"></div>
                                     <div class="d-flex gap-2">
                                         <button type="submit" class="btn btn-success">
                                             <i class="bi bi-check-circle me-2"></i>Create Model
