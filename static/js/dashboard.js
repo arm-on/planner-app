@@ -4437,7 +4437,7 @@ function setCurrentDoingActivityFromSchedule() {
     }
     // If none found, clear currentActivity section
     currentActivity = null;
-    document.getElementById('currentActivityInfo').innerHTML = `<p class="mb-1">No active activity</p><small>Click \"Clock In\" to start tracking your work</small>`;
+    document.getElementById('currentActivityInfo').innerHTML = `<p class="mb-1">No active activity</p>`;
     document.getElementById('startTime').textContent = '--:--';
 }
 
@@ -4527,7 +4527,6 @@ const activityProjectSelect = document.getElementById('activityProject');
 if (activityProjectSelect) {
     activityProjectSelect.addEventListener('change', populateTaskSelect);
 }
-
 
 
 

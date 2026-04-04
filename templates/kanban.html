@@ -177,16 +177,22 @@
         .nav-btn {
             display: inline-flex !important;
             align-items: center !important;
-            gap: 0.45rem !important;
-            padding: 0.62rem 1rem !important;
-            font-size: 0.92rem !important;
+            gap: 0.4rem !important;
+            padding: 0.45rem 0.85rem !important;
+            font-size: 0.85rem !important;
             font-weight: 700 !important;
             line-height: 1 !important;
             border-radius: 999px !important;
             border: 1px solid var(--theme-border) !important;
             background: rgba(255, 255, 255, 0.82) !important;
             color: #1a2a45 !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+        }
+        .nav-btn:hover {
+            transform: translateY(-2px) !important;
             box-shadow: 0 12px 28px -18px rgba(22, 50, 98, 0.35) !important;
+            border-color: #b9ccec !important;
+            color: #0f1f39 !important;
         }
         .nav-btn i {
             font-size: 1rem !important;
@@ -247,7 +253,7 @@
             box-shadow: var(--theme-shadow) !important;
         }
         .kanban-column-header {
-            color: #102447;
+            color: var(--theme-text);
             font-family: "Space Grotesk", "Manrope", sans-serif;
         }
         .kanban-task {

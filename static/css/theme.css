@@ -6,6 +6,13 @@
   color-scheme: dark;
 }
 
+/* Keep page gradients continuous on long pages (no mid-page seam). */
+body {
+  background-repeat: no-repeat !important;
+  background-attachment: fixed !important;
+  background-size: 100% 100%, 100% 100%, cover !important;
+}
+
 :root[data-theme="dark"] body {
   background: radial-gradient(circle at 10% 10%, #1d2d4f 0%, transparent 35%),
               radial-gradient(circle at 85% 20%, #1a4c4a 0%, transparent 30%),
@@ -129,6 +136,92 @@
 
 :root[data-theme="dark"] .calendar-day.today {
   background: linear-gradient(180deg, #203a64 0%, #1b304f 100%) !important;
+}
+
+/* Assistant/report/dashboard fine tuning for readable dark contrast */
+:root[data-theme="dark"] .response-content,
+:root[data-theme="dark"] .response-content p,
+:root[data-theme="dark"] .response-content li,
+:root[data-theme="dark"] .response-content strong,
+:root[data-theme="dark"] .panel-title,
+:root[data-theme="dark"] .smart-value,
+:root[data-theme="dark"] .smart-label,
+:root[data-theme="dark"] .spotlight-title,
+:root[data-theme="dark"] .spotlight-items,
+:root[data-theme="dark"] .route-hint,
+:root[data-theme="dark"] .header-user-name {
+  color: #e8f0ff !important;
+}
+
+:root[data-theme="dark"] .response-content code,
+:root[data-theme="dark"] .response-content pre,
+:root[data-theme="dark"] .badge-soft,
+:root[data-theme="dark"] .spotlight-block,
+:root[data-theme="dark"] .smart-card,
+:root[data-theme="dark"] .action-chip,
+:root[data-theme="dark"] .action-form,
+:root[data-theme="dark"] .simple-action-btn,
+:root[data-theme="dark"] .prompt-pill,
+:root[data-theme="dark"] .welcome-container,
+:root[data-theme="dark"] .header-user-chip {
+  background: rgba(23, 36, 57, 0.94) !important;
+  border-color: rgba(110, 142, 187, 0.4) !important;
+  color: #dce9ff !important;
+}
+
+:root[data-theme="dark"] .response-empty,
+:root[data-theme="dark"] .thinking,
+:root[data-theme="dark"] .tiny {
+  color: #a7bbda !important;
+}
+
+/* Dashboard current activity contrast fixes */
+:root[data-theme="dark"] #currentActivityInfo p,
+:root[data-theme="dark"] #currentActivityInfo,
+:root[data-theme="dark"] .current-activity h4 {
+  color: #d9e7ff !important;
+}
+
+:root[data-theme="dark"] #currentTime,
+:root[data-theme="dark"] .clock-in-time {
+  color: #f3f8ff !important;
+  text-shadow: 0 0 0 transparent !important;
+}
+
+:root[data-theme="dark"] .kanban-column-header {
+  color: #e8f0ff !important;
+}
+
+:root[data-theme="dark"] .kanban-project-group {
+  background: rgba(20, 33, 52, 0.94) !important;
+  border-color: rgba(108, 137, 176, 0.38) !important;
+  box-shadow: 0 10px 24px -20px rgba(0, 0, 0, 0.9) !important;
+}
+
+:root[data-theme="dark"] .nav-btn.timezone-btn,
+:root[data-theme="dark"] .nav-btn.dashboard-btn,
+:root[data-theme="dark"] .nav-btn.reports-btn,
+:root[data-theme="dark"] .nav-btn.assistant-btn,
+:root[data-theme="dark"] .nav-btn.kanban-btn,
+:root[data-theme="dark"] .nav-btn.logout-btn {
+  background: rgba(26, 41, 63, 0.9) !important;
+}
+
+:root[data-theme="dark"] .btn-primary,
+:root[data-theme="dark"] .btn-outline-primary:hover {
+  background: linear-gradient(145deg, #2f63c8, #2653ad) !important;
+  border-color: #4f7dd3 !important;
+  color: #f2f7ff !important;
+}
+
+:root[data-theme="dark"] .text-primary,
+:root[data-theme="dark"] .text-info,
+:root[data-theme="dark"] .text-success {
+  color: #b7d0ff !important;
+}
+
+:root[data-theme="dark"] .modal-content {
+  background: rgba(16, 26, 42, 0.98) !important;
 }
 
 .theme-fab {

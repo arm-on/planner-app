@@ -364,18 +364,31 @@
             color: var(--theme-brand);
         }
         .nav-btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 0.4rem !important;
+            padding: 0.45rem 0.85rem !important;
+            font-size: 0.85rem !important;
+            font-weight: 700 !important;
             border-radius: 999px !important;
-            border: 1px solid var(--theme-border) !important;
+            border: 1px solid var(--border) !important;
             background: rgba(255, 255, 255, 0.82) !important;
             color: #1a2a45 !important;
-            box-shadow: 0 12px 28px -18px rgba(22, 50, 98, 0.35) !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
         }
+        .nav-btn:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 12px 28px -18px rgba(22, 50, 98, 0.35) !important;
+            border-color: #b9ccec !important;
+            color: #0f1f39 !important;
+        }
+        .dashboard-btn { background: linear-gradient(145deg, #eff7ff, #e1eeff) !important; }
         .menu-toggle {
             display: none;
             width: 40px;
             height: 40px;
             border-radius: 10px;
-            border: 1px solid var(--theme-border);
+            border: 1px solid var(--border);
             background: rgba(255, 255, 255, 0.85);
             color: #1a2a45;
         }
@@ -439,7 +452,7 @@
     <!-- Header -->
     <header class="report-header">
         <div class="container">
-            <div class="row align-items-center py-3">
+            <div class="row align-items-center py-4">
                 <div class="col-md-6">
                     <div class="d-flex align-items-center">
                         <div class="header-logo me-3">
