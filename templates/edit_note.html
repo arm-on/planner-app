@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% block head %}
-    <link rel="stylesheet" href="/static/vendor/easymde/easymde.min.css">
     <style>
         .edit-note-header {
             display: flex;
@@ -33,7 +32,7 @@
     <div class="edit-note-card">
         <form method="post" action="/notes/edit-note/{{ note.id }}" enctype="multipart/form-data">
             <div class="mb-3">
-                <label for="content" class="form-label">Note Content (Markdown supported)</label>
+                <label for="content" class="form-label">Note Content</label>
                 <textarea class="form-control" name="content" id="content" rows="8">{{ note.content }}</textarea>
             </div>
             <div class="mb-3">
@@ -87,71 +86,78 @@
     </div>
   </div>
 </div>
-<script src="/static/vendor/easymde/easymde.min.js"></script>
-<script src="/static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/static/vendor/ckeditor5/classic/ckeditor.js"></script>
 <script>
-    var easyMDE = new EasyMDE({
-        element: document.getElementById("content"),
-        autoDownloadFontAwesome: false,
-        spellChecker: false,
-        status: false,
-        minHeight: "250px",
-        placeholder: "Edit your note in markdown...",
-        toolbar: [
-            "bold", "italic", "heading", "|",
-            "quote", "unordered-list", "ordered-list", "|",
-            "link", {
-                name: "image",
-                action: EasyMDE.drawImage,
-                className: "bi bi-image",
-                title: "Insert Image"
-            }, "|",
-            "preview", "side-by-side", "fullscreen"
-        ],
-        imageUpload: false, // disable built-in upload
-        imageMaxSize: 5 * 1024 * 1024, // 5MB
-        imageAccept: "image/*"
-    });
-    // Custom paste handler for clipboard images using CodeMirror's event system
-    easyMDE.codemirror.on('paste', function(cm, e) {
-        var items = (e.clipboardData || e.originalEvent.clipboardData).items;
-        var foundImage = false;
-        for (var i = 0; i < items.length; i++) {
-            var item = items[i];
-            if (item.kind === 'file' && item.type.startsWith('image/')) {
-                foundImage = true;
-                e.preventDefault();
-                var file = item.getAsFile();
-                var formData = new FormData();
+    let noteEditor = null;
+    const NOTE_BLOCK_SELECTOR = 'p, li, h1, h2, h3, h4, h5, h6, blockquote, td, th';
+
+    function applyAutoDirection(root) {
+        if (!root) return;
+        root.querySelectorAll(NOTE_BLOCK_SELECTOR).forEach((node) => {
+            if (!node.getAttribute('dir')) node.setAttribute('dir', 'auto');
+            node.style.textAlign = 'start';
+        });
+    }
+
+    class NotesUploadAdapter {
+        constructor(loader) {
+            this.loader = loader;
+        }
+
+        upload() {
+            return this.loader.file.then(file => new Promise((resolve, reject) => {
+                const formData = new FormData();
                 formData.append('file', file);
                 fetch('/notes/upload-image', {
                     method: 'POST',
                     body: formData,
                     credentials: 'same-origin'
-                })
-                .then(response => response.json())
+                }).then(response => response.json())
                 .then(data => {
                     if (data.success && data.file && data.file.url) {
-                        var pos = cm.getCursor();
-                        var markdown = `![](${data.file.url})`;
-                        cm.replaceRange(markdown, pos);
+                        resolve({ default: data.file.url });
                     } else {
-                        alert(data.message || 'Image upload failed.');
+                        reject(data.message || 'Image upload failed.');
                     }
-                })
-                .catch(() => {
-                    alert('Image upload failed.');
-                });
-                break;
-            }
+                }).catch(() => reject('Image upload failed.'));
+            }));
         }
-        if (!foundImage) {
-            // Optionally alert or ignore
+
+        abort() {}
+    }
+
+    function NotesUploadAdapterPlugin(editor) {
+        editor.plugins.get('FileRepository').createUploadAdapter = loader => new NotesUploadAdapter(loader);
+    }
+
+    ClassicEditor.create(document.getElementById('content'), {
+        extraPlugins: [NotesUploadAdapterPlugin],
+        toolbar: [
+            'heading', '|', 'bold', 'italic', 'link', 'blockQuote',
+            'numberedList', 'bulletedList', '|', 'insertTable', 'uploadImage',
+            '|', 'undo', 'redo'
+        ],
+        language: {
+            ui: 'en',
+            content: 'fa'
+        },
+        image: {
+            toolbar: ['imageTextAlternative', 'imageStyle:inline', 'imageStyle:block', 'imageStyle:side']
         }
+    }).then(editor => {
+        noteEditor = editor;
+        applyAutoDirection(editor.ui.getEditableElement());
+        editor.model.document.on('change:data', () => {
+            requestAnimationFrame(() => applyAutoDirection(editor.ui.getEditableElement()));
+        });
+    }).catch(error => {
+        console.error(error);
     });
+
     document.querySelector('form').addEventListener('submit', function(e) {
-        document.getElementById('content').value = easyMDE.value();
-        if (!easyMDE.value().trim()) {
+        const value = noteEditor ? noteEditor.getData() : document.getElementById('content').value;
+        document.getElementById('content').value = value;
+        if (!value.trim()) {
             alert("Please enter some content for your note.");
             e.preventDefault();
         }

@@ -224,6 +224,56 @@ body {
   background: rgba(16, 26, 42, 0.98) !important;
 }
 
+/* Notes pages + CKEditor dark mode */
+:root[data-theme="dark"] .add-note-card,
+:root[data-theme="dark"] .edit-note-card,
+:root[data-theme="dark"] .timeline-card,
+:root[data-theme="dark"] .note-card {
+  background: rgba(19, 29, 46, 0.94) !important;
+  border-color: rgba(108, 137, 176, 0.35) !important;
+  color: #e7edf8 !important;
+}
+
+:root[data-theme="dark"] .note-card.expanded {
+  background: rgba(43, 39, 23, 0.95) !important;
+  border-color: rgba(214, 180, 90, 0.55) !important;
+}
+
+:root[data-theme="dark"] .markdown-body pre,
+:root[data-theme="dark"] .markdown-body code {
+  background: rgba(12, 20, 33, 0.95) !important;
+  color: #dce8ff !important;
+}
+
+:root[data-theme="dark"] .ck.ck-editor__main > .ck-editor__editable,
+:root[data-theme="dark"] .ck.ck-content {
+  background: rgba(12, 20, 33, 0.96) !important;
+  color: #e8f0ff !important;
+  border-color: rgba(108, 137, 176, 0.4) !important;
+}
+
+:root[data-theme="dark"] .ck.ck-toolbar {
+  background: rgba(20, 33, 52, 0.95) !important;
+  border-color: rgba(108, 137, 176, 0.4) !important;
+}
+
+:root[data-theme="dark"] .ck.ck-button,
+:root[data-theme="dark"] .ck.ck-button .ck-button__label,
+:root[data-theme="dark"] .ck.ck-button .ck-icon {
+  color: #dce8ff !important;
+}
+
+:root[data-theme="dark"] .ck.ck-button:hover,
+:root[data-theme="dark"] .ck.ck-button.ck-on {
+  background: rgba(47, 76, 124, 0.55) !important;
+}
+
+.ck.ck-content [dir="auto"],
+.markdown-body [dir="auto"] {
+  unicode-bidi: plaintext;
+  text-align: start;
+}
+
 .theme-fab {
   position: fixed;
   right: 16px;
@@ -242,4 +292,13 @@ body {
   background: rgba(21, 34, 53, 0.96);
   color: #dce8ff;
   border-color: rgba(111, 145, 191, 0.5);
+}
+
+.app-footer {
+  font-size: 0.9rem;
+  letter-spacing: 0.01em;
+}
+
+:root[data-theme="dark"] .app-footer {
+  color: #a7bbda !important;
 }

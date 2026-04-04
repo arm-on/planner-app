@@ -5,6 +5,7 @@
     font-size: 1.05rem;
     line-height: 1.7;
     padding: 0.5rem 0;
+    text-align: start;
 }
 .markdown-body h1, .markdown-body h2, .markdown-body h3 {
     margin-top: 1.2em;
@@ -205,6 +206,7 @@
 let deleteNoteModal = document.getElementById('deleteNoteModal');
 let deleteNoteForm = document.getElementById('deleteNoteForm');
 let bsDeleteModal = new bootstrap.Modal(deleteNoteModal);
+const NOTE_BLOCK_SELECTOR = 'p, li, h1, h2, h3, h4, h5, h6, blockquote, td, th';
 
 // Make timeline images small and clickable for preview
 function enableTimelineImagePreview() {
@@ -219,6 +221,15 @@ function enableTimelineImagePreview() {
                 modal.show();
             });
         }
+    });
+}
+
+function applyAutoDirectionToRenderedNotes() {
+    document.querySelectorAll('.markdown-body').forEach(function(body) {
+        body.querySelectorAll(NOTE_BLOCK_SELECTOR).forEach(function(node) {
+            if (!node.getAttribute('dir')) node.setAttribute('dir', 'auto');
+            node.style.textAlign = 'start';
+        });
     });
 }
 
@@ -264,6 +275,12 @@ document.addEventListener('click', function(e) {
     }
     // After expanding/collapsing, re-enable image preview
     setTimeout(enableTimelineImagePreview, 100);
+    setTimeout(applyAutoDirectionToRenderedNotes, 100);
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    enableTimelineImagePreview();
+    applyAutoDirectionToRenderedNotes();
 });
 </script>
 {% endblock %} 

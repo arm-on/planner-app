@@ -6,21 +6,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/vendor/bootstrap-icons/css/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=3.0">
     {% block head %}{% endblock %}
     <link rel="stylesheet" href="/static/css/theme.css?v=1.0">
     <script src="/static/js/theme.js?v=1.0" defer></script>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+    <header class="dashboard-header">
         <div class="container">
-            <a class="navbar-brand" href="/">Planner App</a>
+            <div class="row align-items-center py-4">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <div class="header-logo me-3">
+                            <i class="bi bi-journal-richtext"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-0 header-title">Notes Workspace</h4>
+                            <small class="text-muted header-subtitle">Write, edit, and review your notes</small>
+                            <div class="header-user-chip">
+                                <i class="bi bi-person-circle"></i>
+                                <span class="header-user-name" id="baseUserName">User</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="header-nav">
+                        <button class="menu-toggle d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#baseTopMenu" aria-controls="baseTopMenu" aria-expanded="false" aria-label="Toggle navigation">
+                            <i class="bi bi-list"></i>
+                        </button>
+                        <div class="collapse d-md-block top-menu-collapse" id="baseTopMenu">
+                            <div class="nav-buttons">
+                                <a href="/dashboard" class="nav-btn dashboard-btn" title="Dashboard"><i class="bi bi-house-door"></i><span class="btn-text">Dashboard</span></a>
+                                <a href="/reports" class="nav-btn reports-btn" title="Reports"><i class="bi bi-graph-up"></i><span class="btn-text">Reports</span></a>
+                                <a href="/assistant" class="nav-btn assistant-btn" title="Assistant"><i class="bi bi-robot"></i><span class="btn-text">Assistant</span></a>
+                                <a href="/kanban" class="nav-btn kanban-btn" title="Kanban"><i class="bi bi-columns-gap"></i><span class="btn-text">Kanban</span></a>
+                                <button class="nav-btn logout-btn" type="button" onclick="baseLogout()" title="Logout"><i class="bi bi-box-arrow-right"></i><span class="btn-text">Logout</span></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </nav>
-    <main>
+    </header>
+    <main class="main-content">
         {% block content %}{% endblock %}
     </main>
-    <footer class="text-center text-muted py-3 mt-4">
-        &copy; {{ 2024 }} Planner App
+    <footer class="text-center text-muted py-3 mt-4 app-footer">
+        &copy; 2026 Planner App. Designed by Arman Malekzadeh.
     </footer>
+    <script src="/static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (function initBaseHeader() {
+            const displayName = localStorage.getItem('displayName') || localStorage.getItem('username') || 'User';
+            const nameNode = document.getElementById('baseUserName');
+            if (nameNode) nameNode.textContent = displayName;
+        })();
+
+        function baseLogout() {
+            localStorage.removeItem('apiKey');
+            localStorage.removeItem('username');
+            localStorage.removeItem('displayName');
+            window.location.href = '/login';
+        }
+    </script>
 </body>
 </html> 
