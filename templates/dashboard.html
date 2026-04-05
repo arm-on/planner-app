@@ -77,6 +77,53 @@
     <!-- Main Content -->
     <div class="main-content">
         <div class="container">
+            <!-- Quick Start Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card quick-start-card">
+                        <div class="card-body">
+                            <div class="quick-start-header d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+                                <div>
+                                    <h5 class="card-title mb-1">
+                                        <i class="bi bi-lightning-charge me-2"></i>
+                                        Quick Start
+                                    </h5>
+                                    <div class="quick-start-subtitle">Pick a common activity and begin in one tap.</div>
+                                </div>
+                                <button class="btn btn-sm btn-outline-secondary mt-2 mt-md-0" data-bs-toggle="modal" data-bs-target="#newActivityModal">
+                                    <i class="bi bi-sliders me-1"></i>
+                                    Open Full Activity Form
+                                </button>
+                            </div>
+
+                            <div id="quickStartLoading" class="text-muted small mb-2">
+                                Loading your quick activities...
+                            </div>
+                            <div id="quickStartActionFeedback" class="mb-3"></div>
+
+                            <div id="resumeActivityContainer" class="mb-3" style="display:none;">
+                                <div class="quick-section-label">Continue</div>
+                                <div id="resumeActivityCard"></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="quick-section-label">Recent</div>
+                                <div id="recentActivitiesList" class="quick-chip-row"></div>
+                            </div>
+
+                            <div>
+                                <div class="quick-section-label">Frequent</div>
+                                <div id="frequentActivitiesList" class="quick-frequent-grid"></div>
+                            </div>
+
+                            <div id="quickStartEmpty" class="text-muted small mt-2" style="display:none;">
+                                No quick activities yet. Start a few activities and we will personalize this section.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Current Activity Section (restored) -->
             <div class="row mb-4">
                 <div class="col-12">

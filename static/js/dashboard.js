@@ -2,6 +2,12 @@ let currentActivity = null;
 let scheduleData = [];
 let tasksData = [];
 let clockInInterval = null;
+let recentActivityTemplates = [];
+let frequentActivityTemplates = [];
+let resumeActivityTemplate = null;
+let quickStartHistory = [];
+let pendingQuickStartUndo = null;
+let quickTemplateMap = {};
 
 // Global data storage
 let modelsData = [];
@@ -198,6 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (endDateInput) endDateInput.value = today;
     
     await loadActivitiesWithPagination();
+    await refreshQuickStartData();
     }).then(async () => {
         await checkForPlannedActivities();
     }).then(async () => {
@@ -2986,6 +2993,398 @@ document.getElementById('taskProject').addEventListener('change', function() {
     }
 });
 
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function formatQuickRelativeTime(dateValue) {
+    if (!dateValue) return 'Recently';
+    const dateObj = new Date(dateValue);
+    if (isNaN(dateObj.getTime())) return 'Recently';
+    const diffMs = Date.now() - dateObj.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    if (diffHours < 24) return 'Today';
+    if (diffHours < 48) return 'Yesterday';
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
+}
+
+function getQuickProjectName(taskId) {
+    const task = tasksData.find(t => Number(t.id) === Number(taskId));
+    if (!task) return 'No project';
+    const project = projectsData.find(p => Number(p.id) === Number(task.proj_id));
+    return project ? project.name : 'No project';
+}
+
+function buildActivityTemplatesFromHistory(activities) {
+    const groupedByTask = {};
+    const sorted = [...activities].sort((a, b) => new Date(b.clock_in) - new Date(a.clock_in));
+
+    for (const activity of sorted) {
+        const taskId = Number(activity.task_id);
+        if (!taskId) continue;
+        const task = tasksData.find(t => Number(t.id) === taskId);
+        if (!task || task.state === 'closed') continue;
+        if (!groupedByTask[taskId]) groupedByTask[taskId] = [];
+        groupedByTask[taskId].push(activity);
+    }
+
+    const templates = Object.entries(groupedByTask).map(([taskId, entries]) => {
+        const task = tasksData.find(t => Number(t.id) === Number(taskId));
+        const project = projectsData.find(p => Number(p.id) === Number(task?.proj_id));
+        let totalDuration = 0;
+        let durationCount = 0;
+        entries.forEach((entry) => {
+            if (entry.clock_out) {
+                const duration = new Date(entry.clock_out) - new Date(entry.clock_in);
+                if (duration > 0) {
+                    totalDuration += duration;
+                    durationCount += 1;
+                }
+            }
+        });
+        const averageDurationMinutes = durationCount > 0 ? Math.round(totalDuration / durationCount / 60000) : null;
+        const lastUsed = entries[0]?.clock_in;
+        const lastHour = lastUsed ? new Date(lastUsed).getHours() : null;
+        const nowHour = new Date().getHours();
+        const hourDistance = lastHour === null ? 12 : Math.abs(lastHour - nowHour);
+        const timeOfDayMatch = Math.max(0, 1 - (Math.min(hourDistance, 12) / 12));
+
+        return {
+            key: `task_${taskId}`,
+            task_id: Number(taskId),
+            project_id: task?.proj_id || null,
+            task_title: task?.title || `Task ${taskId}`,
+            project_name: project?.name || 'No project',
+            description: entries[0]?.description || '',
+            count_30d: entries.length,
+            last_used_at: lastUsed,
+            avg_duration_min: averageDurationMinutes,
+            time_of_day_match: timeOfDayMatch,
+            latest_activity: entries[0]
+        };
+    });
+
+    templates.sort((a, b) => new Date(b.last_used_at) - new Date(a.last_used_at));
+    const mostRecent = templates.slice(0, 8);
+
+    const maxCount = Math.max(1, ...templates.map(t => t.count_30d));
+    const now = Date.now();
+    const scored = templates.map((template) => {
+        const ageDays = Math.max(0, (now - new Date(template.last_used_at).getTime()) / (1000 * 60 * 60 * 24));
+        const recencyScore = Math.max(0, 1 - (Math.min(ageDays, 30) / 30));
+        const frequencyScore = template.count_30d / maxCount;
+        const score = (0.45 * recencyScore) + (0.35 * frequencyScore) + (0.20 * template.time_of_day_match);
+        return { ...template, quick_score: score };
+    }).sort((a, b) => b.quick_score - a.quick_score);
+
+    const mostFrequent = scored.slice(0, 6);
+    return { mostRecent, mostFrequent };
+}
+
+function detectResumeCandidate() {
+    if (currentActivity && currentActivity.task_id) {
+        const task = tasksData.find(t => Number(t.id) === Number(currentActivity.task_id));
+        return {
+            key: `resume_${currentActivity.id}`,
+            task_id: currentActivity.task_id,
+            task_title: task?.title || `Task ${currentActivity.task_id}`,
+            project_name: getQuickProjectName(currentActivity.task_id),
+            description: currentActivity.description || '',
+            last_used_at: currentActivity.clock_in,
+            source_activity_id: currentActivity.id
+        };
+    }
+
+    const latest = quickStartHistory
+        .filter(a => a.task_id)
+        .sort((a, b) => new Date(b.clock_in) - new Date(a.clock_in))[0];
+    if (!latest) return null;
+    const task = tasksData.find(t => Number(t.id) === Number(latest.task_id));
+    if (!task || task.state === 'closed') return null;
+    return {
+        key: `resume_recent_${latest.id}`,
+        task_id: latest.task_id,
+        task_title: task.title,
+        project_name: getQuickProjectName(latest.task_id),
+        description: latest.description || '',
+        last_used_at: latest.clock_in,
+        source_activity_id: latest.id
+    };
+}
+
+async function refreshQuickStartData() {
+    const loadingNode = document.getElementById('quickStartLoading');
+    if (loadingNode) loadingNode.style.display = 'block';
+
+    try {
+        const apiKey = localStorage.getItem('apiKey');
+        if (!apiKey) return;
+
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 30);
+        const startDateStr = startDate.toISOString().slice(0, 10);
+        const endDateStr = endDate.toISOString().slice(0, 10);
+        const tz = encodeURIComponent(userTimezone || 'Asia/Tehran');
+
+        let response = await fetch(
+            `/activities/date-range?start_date=${startDateStr}&end_date=${endDateStr}&limit=1000&timezone=${tz}`,
+            { headers: { 'X-API-Key': apiKey } }
+        );
+
+        if (!response.ok) {
+            response = await fetch('/activities/?skip=0&limit=500', {
+                headers: { 'X-API-Key': apiKey }
+            });
+        }
+
+        if (!response.ok) throw new Error('Failed to load quick-start activities');
+        quickStartHistory = await response.json();
+        const { mostRecent, mostFrequent } = buildActivityTemplatesFromHistory(quickStartHistory);
+        recentActivityTemplates = mostRecent;
+        frequentActivityTemplates = mostFrequent;
+        resumeActivityTemplate = detectResumeCandidate();
+        renderQuickStartSection();
+    } catch (error) {
+        console.error('Error loading quick start data:', error);
+    } finally {
+        if (loadingNode) loadingNode.style.display = 'none';
+    }
+}
+
+function renderQuickStartSection() {
+    const resumeContainer = document.getElementById('resumeActivityContainer');
+    const resumeCard = document.getElementById('resumeActivityCard');
+    const recentList = document.getElementById('recentActivitiesList');
+    const frequentList = document.getElementById('frequentActivitiesList');
+    const emptyNode = document.getElementById('quickStartEmpty');
+    if (!recentList || !frequentList || !resumeContainer || !resumeCard || !emptyNode) return;
+
+    quickTemplateMap = {};
+    const registerTemplate = (template) => {
+        if (!template || !template.key) return;
+        quickTemplateMap[template.key] = template;
+    };
+
+    if (resumeActivityTemplate) {
+        registerTemplate(resumeActivityTemplate);
+        resumeContainer.style.display = '';
+        resumeCard.innerHTML = `
+            <div class="resume-activity-card">
+                <div>
+                    <div class="resume-title">${escapeHtml(resumeActivityTemplate.task_title)}</div>
+                    <div class="resume-meta">Last active ${formatQuickRelativeTime(resumeActivityTemplate.last_used_at)} • ${escapeHtml(resumeActivityTemplate.project_name)}</div>
+                </div>
+                <div class="quick-actions-row">
+                    <button class="btn btn-sm btn-primary quick-action-btn quick-start-trigger" data-template-key="${resumeActivityTemplate.key}" data-source="resume">Continue Now</button>
+                    <button class="quick-link-btn quick-customize-trigger" data-template-key="${resumeActivityTemplate.key}">Customize</button>
+                </div>
+            </div>
+        `;
+    } else {
+        resumeContainer.style.display = 'none';
+        resumeCard.innerHTML = '';
+    }
+
+    if (recentActivityTemplates.length === 0) {
+        recentList.innerHTML = `<div class="text-muted small">No recent activities yet.</div>`;
+    } else {
+        recentList.innerHTML = recentActivityTemplates.map((item) => {
+            registerTemplate(item);
+            return `
+                <button class="quick-activity-chip quick-start-trigger" data-template-key="${item.key}" data-source="recent">
+                    <i class="bi bi-play-fill me-1"></i>${escapeHtml(item.task_title)} · ${formatQuickRelativeTime(item.last_used_at)}
+                </button>
+            `;
+        }).join('');
+    }
+
+    if (frequentActivityTemplates.length === 0) {
+        frequentList.innerHTML = `<div class="text-muted small">No frequent activity patterns yet.</div>`;
+    } else {
+        frequentList.innerHTML = frequentActivityTemplates.map((item) => {
+            registerTemplate(item);
+            return `
+                <div class="quick-frequent-item">
+                    <div class="quick-title">${escapeHtml(item.task_title)}</div>
+                    <div class="quick-meta">${escapeHtml(item.project_name)} • ${item.count_30d} times in 30d${item.avg_duration_min ? ` • avg ${item.avg_duration_min}m` : ''}</div>
+                    <div class="quick-actions-row">
+                        <button class="btn btn-sm btn-outline-primary quick-action-btn quick-start-trigger" data-template-key="${item.key}" data-source="frequent">Start Now</button>
+                        <button class="quick-link-btn quick-customize-trigger" data-template-key="${item.key}">Customize</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    const hasData = !!resumeActivityTemplate || recentActivityTemplates.length > 0 || frequentActivityTemplates.length > 0;
+    emptyNode.style.display = hasData ? 'none' : '';
+}
+
+async function startQuickActivityNow(template, sourceType) {
+    if (!template || !template.task_id) return;
+    const apiKey = localStorage.getItem('apiKey');
+    if (!apiKey) {
+        showToast('error', 'Error', 'No API key found. Please log in again.');
+        window.location.href = '/login';
+        return;
+    }
+
+    if (currentActivity && Number(currentActivity.task_id) === Number(template.task_id)) {
+        showToast('info', 'Already Running', `You're already doing "${template.task_title}".`);
+        return;
+    }
+    if (currentActivity && Number(currentActivity.task_id) !== Number(template.task_id)) {
+        showToast('warning', 'Clock Out First', 'You already have an active activity. Clock out before starting another one.');
+        return;
+    }
+
+    const task = tasksData.find(t => Number(t.id) === Number(template.task_id));
+    if (!task) {
+        showToast('warning', 'Task Missing', 'This quick activity task no longer exists.');
+        return;
+    }
+
+    const previousTaskState = task.state;
+    const description = template.description || null;
+    const nowIso = new Date().toISOString();
+
+    try {
+        await fetch(`/tasks/${template.task_id}`, {
+            method: 'PUT',
+            headers: {
+                'X-API-Key': apiKey,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ state: 'doing' })
+        });
+
+        const response = await fetch('/activities/', {
+            method: 'POST',
+            headers: {
+                'X-API-Key': apiKey,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                task_id: parseInt(template.task_id),
+                status: 'DOING',
+                clock_in: nowIso,
+                description: description
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || 'Could not start quick activity');
+        }
+
+        const created = await response.json();
+        const createdActivity = Array.isArray(created) ? created[0] : created;
+        showToast('success', 'Activity Started', `Started: ${template.task_title}`, 4000);
+        showQuickStartUndo(createdActivity, template, previousTaskState, sourceType);
+        await refreshDashboardData();
+    } catch (error) {
+        console.error('Quick start failed:', error);
+        showToast('error', 'Quick Start Failed', error.message || 'Unknown error');
+    }
+}
+
+function showQuickStartUndo(activity, template, previousTaskState, sourceType) {
+    const feedback = document.getElementById('quickStartActionFeedback');
+    if (!feedback || !activity || !activity.id) return;
+    pendingQuickStartUndo = {
+        activity_id: activity.id,
+        task_id: template.task_id,
+        previous_task_state: previousTaskState
+    };
+    feedback.innerHTML = `
+        <div class="alert alert-success d-flex justify-content-between align-items-center py-2 mb-0">
+            <div class="small"><strong>Started</strong> ${escapeHtml(template.task_title)} <span class="text-muted">(${escapeHtml(sourceType)})</span></div>
+            <button class="btn btn-sm btn-outline-dark" id="quickStartUndoBtn">Undo</button>
+        </div>
+    `;
+
+    const undoBtn = document.getElementById('quickStartUndoBtn');
+    if (undoBtn) {
+        undoBtn.onclick = async () => {
+            if (!pendingQuickStartUndo) return;
+            try {
+                const apiKey = localStorage.getItem('apiKey');
+                await fetch(`/activities/${pendingQuickStartUndo.activity_id}`, {
+                    method: 'DELETE',
+                    headers: { 'X-API-Key': apiKey }
+                });
+                if (pendingQuickStartUndo.previous_task_state) {
+                    await fetch(`/tasks/${pendingQuickStartUndo.task_id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'X-API-Key': apiKey,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ state: pendingQuickStartUndo.previous_task_state })
+                    });
+                }
+                showToast('info', 'Undone', 'Quick activity start was undone.');
+                feedback.innerHTML = '';
+                pendingQuickStartUndo = null;
+                await refreshDashboardData();
+            } catch (error) {
+                showToast('error', 'Undo Failed', error.message || 'Could not undo');
+            }
+        };
+    }
+
+    setTimeout(() => {
+        if (feedback) feedback.innerHTML = '';
+        pendingQuickStartUndo = null;
+    }, 8000);
+}
+
+function openQuickActivityCustomize(template) {
+    if (!template) return;
+    const modalElement = document.getElementById('newActivityModal');
+    if (!modalElement) return;
+    const modal = new bootstrap.Modal(modalElement);
+
+    const projectSelect = document.getElementById('activityProject');
+    const taskSelect = document.getElementById('activityTask');
+    const statusSelect = document.getElementById('activityStatus');
+    const clockInInput = document.getElementById('activityClockIn');
+    if (statusSelect) statusSelect.value = 'DOING';
+    if (projectSelect && template.project_id) {
+        projectSelect.value = String(template.project_id);
+        populateActivityTasks();
+    }
+    if (taskSelect) taskSelect.value = String(template.task_id);
+    if (clockInInput) clockInInput.value = formatDateTimeForInput(new Date());
+    updateActivityFormFields();
+    modal.show();
+}
+
+document.addEventListener('click', function(event) {
+    const quickStartBtn = event.target.closest('.quick-start-trigger');
+    if (quickStartBtn) {
+        const templateKey = quickStartBtn.getAttribute('data-template-key');
+        const source = quickStartBtn.getAttribute('data-source') || 'quick';
+        const template = quickTemplateMap[templateKey];
+        startQuickActivityNow(template, source);
+        return;
+    }
+
+    const customizeBtn = event.target.closest('.quick-customize-trigger');
+    if (customizeBtn) {
+        const templateKey = customizeBtn.getAttribute('data-template-key');
+        const template = quickTemplateMap[templateKey];
+        openQuickActivityCustomize(template);
+    }
+});
+
 // Function to refresh all dashboard data without page reload
 async function refreshDashboardData() {
     try {
@@ -3019,6 +3418,7 @@ async function refreshDashboardData() {
         setCurrentDoingActivityFromSchedule();
         enableActivityButtons();
         loadUpcomingActivities();
+        await logAndRun('refreshQuickStartData', refreshQuickStartData);
 
         console.log('Dashboard data refreshed successfully');
     } catch (error) {
@@ -4620,9 +5020,3 @@ const activityProjectSelect = document.getElementById('activityProject');
 if (activityProjectSelect) {
     activityProjectSelect.addEventListener('change', populateTaskSelect);
 }
-
-
-
-
-
-

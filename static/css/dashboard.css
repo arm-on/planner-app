@@ -250,6 +250,116 @@ body::after {
     border-width: 1px;
 }
 
+.quick-start-card .card-body {
+    padding: 1rem 1.05rem;
+}
+
+.quick-start-subtitle {
+    color: var(--muted);
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.quick-section-label {
+    font-size: 0.77rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #516a93;
+    font-weight: 800;
+    margin-bottom: 0.55rem;
+}
+
+.resume-activity-card {
+    border: 1px solid #d5e4fb;
+    border-radius: 12px;
+    background: linear-gradient(130deg, #f7fbff 0%, #edf5ff 100%);
+    padding: 0.72rem 0.82rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+}
+
+.resume-title {
+    font-weight: 800;
+    color: #18355f;
+}
+
+.resume-meta {
+    color: #5e7294;
+    font-size: 0.8rem;
+}
+
+.quick-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.quick-activity-chip {
+    border: 1px solid #d4e3fa;
+    background: #f7fbff;
+    color: #16365f;
+    border-radius: 999px;
+    padding: 0.38rem 0.66rem;
+    font-size: 0.79rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.quick-activity-chip:hover {
+    background: #eaf3ff;
+}
+
+.quick-frequent-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+}
+
+.quick-frequent-item {
+    border: 1px solid #d9e7fb;
+    border-radius: 12px;
+    background: #f9fcff;
+    padding: 0.64rem 0.72rem;
+}
+
+.quick-title {
+    font-weight: 700;
+    color: #1c3a63;
+}
+
+.quick-meta {
+    color: #63789d;
+    font-size: 0.77rem;
+}
+
+.quick-actions-row {
+    margin-top: 0.45rem;
+    display: flex;
+    gap: 0.35rem;
+}
+
+.quick-action-btn {
+    border-radius: 10px;
+    padding: 0.24rem 0.55rem;
+    font-size: 0.74rem;
+    font-weight: 700;
+}
+
+.quick-link-btn {
+    border: none;
+    background: transparent;
+    color: #2a538d;
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 0.24rem 0.3rem;
+}
+
+.quick-link-btn:hover {
+    color: #143e75;
+}
+
 .btn {
     border-radius: 12px;
     font-weight: 700;
@@ -593,6 +703,20 @@ body::after {
     .calendar-day {
         min-height: 76px;
         padding: 0.35rem;
+    }
+
+    .quick-chip-row {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 0.2rem;
+    }
+
+    .quick-activity-chip {
+        white-space: nowrap;
+    }
+
+    .quick-frequent-grid {
+        grid-template-columns: 1fr;
     }
 
     .calendar-day-activity {

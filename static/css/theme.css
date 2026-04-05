@@ -291,6 +291,35 @@ body {
   text-shadow: 0 0 0 transparent !important;
 }
 
+:root[data-theme="dark"] .quick-start-card,
+:root[data-theme="dark"] .resume-activity-card,
+:root[data-theme="dark"] .quick-frequent-item,
+:root[data-theme="dark"] .quick-activity-chip {
+  background: rgba(22, 34, 53, 0.94) !important;
+  border-color: rgba(108, 137, 176, 0.38) !important;
+  color: #deebff !important;
+}
+
+:root[data-theme="dark"] .quick-section-label,
+:root[data-theme="dark"] .quick-title,
+:root[data-theme="dark"] .resume-title {
+  color: #e7f0ff !important;
+}
+
+:root[data-theme="dark"] .quick-meta,
+:root[data-theme="dark"] .resume-meta,
+:root[data-theme="dark"] .quick-start-subtitle {
+  color: #a9bcda !important;
+}
+
+:root[data-theme="dark"] .quick-link-btn {
+  color: #b7d0ff !important;
+}
+
+:root[data-theme="dark"] .quick-link-btn:hover {
+  color: #dbe9ff !important;
+}
+
 :root[data-theme="dark"] .kanban-column-header {
   color: #e8f0ff !important;
 }
