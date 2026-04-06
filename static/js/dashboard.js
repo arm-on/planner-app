@@ -9,6 +9,55 @@ let quickStartHistory = [];
 let pendingQuickStartUndo = null;
 let quickTemplateMap = {};
 
+
+let reminderCreateEditor = null;
+let reminderEditEditor = null;
+const REMINDER_BLOCK_SELECTOR = 'p, li, h1, h2, h3, h4, h5, h6, blockquote, td, th';
+
+function applyAutoDirectionToRoot(root) {
+    if (!root) return;
+    root.querySelectorAll(REMINDER_BLOCK_SELECTOR).forEach((node) => {
+        if (!node.getAttribute('dir')) node.setAttribute('dir', 'auto');
+        node.style.textAlign = 'start';
+    });
+}
+
+function initializeReminderEditors() {
+    if (typeof ClassicEditor === 'undefined') return;
+
+    const createEl = document.getElementById('reminderNote');
+    const editEl = document.getElementById('editReminderNote');
+
+    if (createEl && !reminderCreateEditor) {
+        ClassicEditor.create(createEl, {
+            toolbar: ['heading', '|', 'bold', 'italic', 'link', '|', 'numberedList', 'bulletedList', '|', 'undo', 'redo'],
+            language: { ui: 'en', content: 'fa' }
+        }).then(editor => {
+            reminderCreateEditor = editor;
+            applyAutoDirectionToRoot(editor.ui.getEditableElement());
+            editor.model.document.on('change:data', () => requestAnimationFrame(() => applyAutoDirectionToRoot(editor.ui.getEditableElement())));
+        }).catch(console.error);
+    }
+
+    if (editEl && !reminderEditEditor) {
+        ClassicEditor.create(editEl, {
+            toolbar: ['heading', '|', 'bold', 'italic', 'link', '|', 'numberedList', 'bulletedList', '|', 'undo', 'redo'],
+            language: { ui: 'en', content: 'fa' }
+        }).then(editor => {
+            reminderEditEditor = editor;
+            applyAutoDirectionToRoot(editor.ui.getEditableElement());
+            editor.model.document.on('change:data', () => requestAnimationFrame(() => applyAutoDirectionToRoot(editor.ui.getEditableElement())));
+        }).catch(console.error);
+    }
+}
+
+function setReminderWhenEnabled(createMode, enabled) {
+    const whenInput = document.getElementById(createMode ? 'reminderWhen' : 'editReminderWhen');
+    if (!whenInput) return;
+    whenInput.disabled = !enabled;
+    if (!enabled) whenInput.value = '';
+}
+
 // Global data storage
 let modelsData = [];
 let projectsData = [];
@@ -163,6 +212,72 @@ function showToast(type, title, message, duration = 5000) {
     bsToast.show();
 }
 
+function setupDashboardSectionNavigation() {
+    const navButtons = Array.from(document.querySelectorAll('[data-section-target]'));
+    const sections = navButtons
+        .map((button) => document.getElementById(button.dataset.sectionTarget))
+        .filter(Boolean);
+    const backToTopBtn = document.getElementById('backToTopBtn');
+
+    if (!navButtons.length || !sections.length) return;
+
+    const setActiveButton = (sectionId) => {
+        navButtons.forEach((button) => {
+            button.classList.toggle('active', button.dataset.sectionTarget === sectionId);
+        });
+    };
+
+    navButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const section = document.getElementById(button.dataset.sectionTarget);
+            if (!section) return;
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setActiveButton(button.dataset.sectionTarget);
+        });
+    });
+
+    if (typeof IntersectionObserver !== 'undefined') {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) setActiveButton(entry.target.id);
+            });
+        }, {
+            root: null,
+            rootMargin: '-32% 0px -56% 0px',
+            threshold: 0.05
+        });
+
+        sections.forEach((section) => observer.observe(section));
+    }
+
+    if (backToTopBtn) {
+        backToTopBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        const toggleBackToTopVisibility = () => {
+            const shouldShow = window.scrollY > window.innerHeight * 0.75;
+            backToTopBtn.classList.toggle('is-visible', shouldShow);
+        };
+
+        window.addEventListener('scroll', toggleBackToTopVisibility, { passive: true });
+        toggleBackToTopVisibility();
+    }
+}
+
+function updateStickyNavigationOffsets() {
+    const header = document.querySelector('.dashboard-header');
+    const sectionNav = document.querySelector('.dashboard-section-nav');
+    if (!header || !sectionNav) return;
+
+    const headerHeight = Math.ceil(header.getBoundingClientRect().height);
+    const navHeight = Math.ceil(sectionNav.getBoundingClientRect().height);
+
+    document.documentElement.style.setProperty('--header-sticky-offset', `${headerHeight}px`);
+    document.documentElement.style.setProperty('--section-nav-height', `${navHeight}px`);
+    document.documentElement.style.setProperty('--section-scroll-offset', `${headerHeight + navHeight + 16}px`);
+}
+
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Dashboard initializing...');
@@ -178,6 +293,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     setTodayDate();
+    setCurrentActivityEmptyState();
     // Add a small delay to ensure localStorage is available
     setTimeout(() => {
         loadUserInfo();
@@ -222,6 +338,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Fix modal scrolling issues
     setupModalHandlers();
+    setupDashboardSectionNavigation();
+    updateStickyNavigationOffsets();
+
+    window.addEventListener('resize', updateStickyNavigationOffsets, { passive: true });
+
+    const topMenu = document.getElementById('dashboardTopMenu');
+    if (topMenu) {
+        topMenu.addEventListener('shown.bs.collapse', () => setTimeout(updateStickyNavigationOffsets, 0));
+        topMenu.addEventListener('hidden.bs.collapse', () => setTimeout(updateStickyNavigationOffsets, 0));
+    }
 
     const newReminderForm = document.getElementById('newReminderForm');
     if (newReminderForm) {
@@ -318,6 +444,8 @@ function setCurrentTime() {
     
     // Only update the current time if no activity is running
     if (!currentActivity) {
+        const timeLabel = document.getElementById('currentTimeLabel');
+        if (timeLabel) timeLabel.textContent = 'Current Time';
         document.getElementById('currentTime').textContent = timeString;
     }
 }
@@ -761,11 +889,17 @@ async function startActivity(taskId, status, clockIn, isScheduled = false, clock
 }
 
 function updateCurrentActivityDisplay(isScheduled) {
+    if (!currentActivity) {
+        setCurrentActivityEmptyState();
+        return;
+    }
+
     console.log('updateCurrentActivityDisplay called with currentActivity:', currentActivity);
     console.log('tasksData available:', tasksData);
     console.log('tasksData length:', tasksData ? tasksData.length : 'undefined');
     
     const task = tasksData ? tasksData.find(t => Number(t.id) === Number(currentActivity.task_id)) : null;
+    const project = task ? projectsData.find((p) => Number(p.id) === Number(task.proj_id)) : null;
     console.log('Found task for activity:', task);
     
     const startTime = new Date(currentActivity.clock_in).toLocaleTimeString('en-US', {
@@ -776,19 +910,61 @@ function updateCurrentActivityDisplay(isScheduled) {
     });
 
     const taskTitle = task ? task.title : `Task ID ${currentActivity.task_id}`;
+    const projectName = project ? project.name : 'No project linked';
     console.log('Using task title:', taskTitle);
 
     document.getElementById('currentActivityInfo').innerHTML = `
-        <h6 class="mb-1">${taskTitle}</h6>
-        <p class="mb-1">You're doing this activity since ${startTime}</p>
-        <span class="badge ${isScheduled ? 'bg-success' : 'bg-warning'}">
-            ${isScheduled ? 'On Schedule' : 'Off Schedule'}
-        </span>
-        <span class="badge bg-warning ms-2">DOING</span>
+        <div class="current-activity-title mb-1">${taskTitle}</div>
+        <div class="current-activity-meta mb-1"><i class="bi bi-folder me-1"></i>${projectName}</div>
+        <div class="current-activity-meta"><i class="bi bi-clock-history me-1"></i>Started at ${startTime}</div>
     `;
 
-    // Set the fixed start time (don't change this)
+    const scheduleBadge = document.getElementById('currentScheduleBadge');
+    const stateBadge = document.getElementById('currentStateBadge');
+    if (scheduleBadge) {
+        scheduleBadge.className = `badge ${isScheduled ? 'bg-success' : 'bg-warning text-dark'}`;
+        scheduleBadge.textContent = isScheduled ? 'On Schedule' : 'Off Schedule';
+        scheduleBadge.style.display = 'inline-flex';
+    }
+    if (stateBadge) {
+        stateBadge.className = 'badge bg-primary';
+        stateBadge.textContent = 'In Progress';
+        stateBadge.style.display = 'inline-flex';
+    }
+
     document.getElementById('startTime').textContent = startTime;
+    const timeLabel = document.getElementById('currentTimeLabel');
+    if (timeLabel) timeLabel.textContent = 'Elapsed';
+    document.getElementById('timezoneInfo').textContent = 'Elapsed time is running now.';
+}
+
+function setCurrentActivityEmptyState() {
+    const info = document.getElementById('currentActivityInfo');
+    if (info) {
+        info.innerHTML = `
+            <div class="current-empty-state">
+                <i class="bi bi-moon-stars"></i>
+                <div>
+                    <strong>No active activity</strong>
+                    <div class="small text-muted">Start an activity to track elapsed time here.</div>
+                </div>
+            </div>
+        `;
+    }
+
+    const scheduleBadge = document.getElementById('currentScheduleBadge');
+    const stateBadge = document.getElementById('currentStateBadge');
+    if (scheduleBadge) scheduleBadge.style.display = 'none';
+    if (stateBadge) stateBadge.style.display = 'none';
+
+    const startTimeLabel = document.getElementById('startTime');
+    if (startTimeLabel) startTimeLabel.textContent = '--:--';
+
+    const timeLabel = document.getElementById('currentTimeLabel');
+    if (timeLabel) timeLabel.textContent = 'Current Time';
+
+    const timezoneLabel = document.getElementById('timezoneInfo');
+    if (timezoneLabel) timezoneLabel.textContent = 'Shows elapsed while an activity is running.';
 }
 
 async function checkForPlannedActivities() {
@@ -862,23 +1038,22 @@ async function enableActivityButtons() {
 
 function startClockInTimer() {
     if (clockInInterval) clearInterval(clockInInterval);
-    
-    clockInInterval = setInterval(() => {
-        if (currentActivity) {
-            const startTime = new Date(currentActivity.clock_in);
-            const now = new Date();
-            const durationMs = now - startTime;
-            const durationMinutes = Math.floor(durationMs / 1000 / 60);
-            const hours = Math.floor(durationMinutes / 60);
-            const minutes = durationMinutes % 60;
-            
-            console.log('Timer debug - startTime:', startTime, 'now:', now, 'durationMs:', durationMs, 'hours:', hours, 'minutes:', minutes);
-            
-            // Display elapsed time in HH:MM format
-            document.getElementById('currentTime').textContent = 
-                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-        }
-    }, 1000);
+
+    const updateElapsedTime = () => {
+        if (!currentActivity) return;
+        const startTime = new Date(currentActivity.clock_in);
+        const now = new Date();
+        const durationMs = now - startTime;
+        const durationMinutes = Math.floor(durationMs / 1000 / 60);
+        const hours = Math.floor(durationMinutes / 60);
+        const minutes = durationMinutes % 60;
+
+        document.getElementById('currentTime').textContent =
+            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    };
+
+    updateElapsedTime();
+    clockInInterval = setInterval(updateElapsedTime, 1000);
 }
 
 // Event Listeners
@@ -949,11 +1124,8 @@ document.getElementById('clockOutBtn').addEventListener('click', async function(
             
             // Reset current activity
             currentActivity = null;
-            document.getElementById('currentActivityInfo').innerHTML = `
-                <p class="mb-1">No active activity</p>
-            `;
+            setCurrentActivityEmptyState();
             document.getElementById('currentTime').textContent = '--:--';
-            document.getElementById('startTime').textContent = '--:--';
             
             // Disable buttons
             const onScheduleBtn = document.getElementById('onScheduleBtn');
@@ -3974,7 +4146,10 @@ function selectCalendarDate(year, month, day) {
     }
     
     // Scroll to the schedule section
-    document.querySelector('.card-header h5').scrollIntoView({ behavior: 'smooth' });
+    const scheduleSection = document.getElementById('scheduleSection');
+    if (scheduleSection) {
+        scheduleSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
     
     // Show success message
     showToast('info', 'Date Selected', `Showing activities for ${dateStr}`);
@@ -4155,14 +4330,15 @@ async function displayReminders() {
         } else {
             when = new Date(reminder.when);
         }
-        const dateTimeStr = when.toLocaleString('en-US', {
+        const isTimeless = !!reminder.is_timeless || !reminder.when;
+        const dateTimeStr = isTimeless ? 'Always shown' : when.toLocaleString('en-US', {
             year: 'numeric', month: 'short', day: 'numeric',
             hour: '2-digit', minute: '2-digit', second: '2-digit',
             hour12: false,
             timeZone: userTimezone || 'Asia/Tehran'
         });
         const now = new Date();
-        const isOverdue = when < now;
+        const isOverdue = !isTimeless && when < now;
         const overdueClass = isOverdue ? 'text-danger' : 'text-muted';
         // Use taskCache for task name
         let taskTitle = '';
@@ -4192,7 +4368,7 @@ async function displayReminders() {
                             <span class="fw-bold ${overdueClass}" style="font-size:0.98em;">${dateTimeStr}</span>
                             ${isOverdue ? '<span class=\"badge bg-danger ms-1\" style=\"font-size:0.8em;\">Overdue</span>' : ''}
                         </div>
-                        <p class="mb-0" style="line-height:1.3;"><span dir="${descDir}" style="text-align:${descAlign};display:block;">${desc}</span></p>
+                        <div class="mb-0 reminder-note-render" style="line-height:1.3;">${desc}</div>
                         ${taskTitle}
                     </div>
                     <div class="d-flex align-items-center">
@@ -4203,6 +4379,17 @@ async function displayReminders() {
         `;
     });
     remindersList.innerHTML = html;
+    remindersList.querySelectorAll('.reminder-note-render').forEach((node) => {
+        node.querySelectorAll(REMINDER_BLOCK_SELECTOR).forEach((line) => {
+            if (!line.getAttribute('dir')) line.setAttribute('dir', 'auto');
+            line.style.textAlign = 'start';
+        });
+        if (!node.querySelector(REMINDER_BLOCK_SELECTOR)) {
+            node.setAttribute('dir', 'auto');
+            node.style.textAlign = 'start';
+            node.style.unicodeBidi = 'plaintext';
+        }
+    });
 }
 
 // Helper to convert local datetime-local value to UTC ISO string
@@ -4219,12 +4406,13 @@ async function createReminder(event) {
     console.log('Create reminder button clicked!');
     
     const when = document.getElementById('reminderWhen').value;
-    const note = document.getElementById('reminderNote').value;
+    const note = reminderCreateEditor ? reminderCreateEditor.getData() : document.getElementById('reminderNote').value;
+    const isTimeless = !!document.getElementById('reminderTimeless')?.checked;
 
     console.log('Form values:', { when, note });
 
-    if (!when || !note) {
-        showToast('warning', 'Validation Error', 'Please fill in all required fields');
+    if ((!isTimeless && !when) || !note.trim()) {
+        showToast('warning', 'Validation Error', 'Please provide note and optional time settings correctly');
         return;
     }
 
@@ -4233,14 +4421,18 @@ async function createReminder(event) {
         console.log('API Key found:', !!apiKey);
         
         // Convert local datetime to UTC ISO string for backend
-        const localDateTime = new Date(when);
-        const utcDateTime = localDateTime.toISOString();
+        let utcDateTime = null;
+        if (!isTimeless && when) {
+            const localDateTime = new Date(when);
+            utcDateTime = localDateTime.toISOString();
+        }
         console.log('Local datetime:', when);
         console.log('UTC datetime:', utcDateTime);
         
         const requestBody = {
-            when: utcDateTime, // Send UTC time to backend
-            note: note
+            when: utcDateTime,
+            note: note,
+            is_timeless: isTimeless
         };
         console.log('Request body:', requestBody);
         
@@ -4265,6 +4457,10 @@ async function createReminder(event) {
             const modal = bootstrap.Modal.getInstance(document.getElementById('newReminderModal'));
             modal.hide();
             document.getElementById('newReminderForm').reset();
+            if (reminderCreateEditor) reminderCreateEditor.setData('');
+            const timelessToggle = document.getElementById('reminderTimeless');
+            if (timelessToggle) timelessToggle.checked = true;
+            setReminderWhenEnabled(true, false);
             
             // Reload reminders
             await loadReminders();
@@ -4272,9 +4468,16 @@ async function createReminder(event) {
             // Refresh dashboard data without page reload
             await refreshDashboardData();
         } else {
-            const errorData = await response.json();
-            console.error('Server error:', errorData);
-            showToast('error', 'Error', `Failed to create reminder: ${errorData.detail || 'Unknown error'}`);
+            const errorText = await response.text();
+            let detail = 'Unknown error';
+            try {
+                const errorData = JSON.parse(errorText);
+                detail = errorData.detail || detail;
+            } catch {
+                detail = errorText || detail;
+            }
+            console.error('Server error:', detail);
+            showToast('error', 'Error', `Failed to create reminder: ${detail}`);
         }
     } catch (error) {
         console.error('Error creating reminder:', error);
@@ -4302,8 +4505,18 @@ async function editReminder(reminderId) {
             
             // Populate the edit form
             document.getElementById('editReminderId').value = reminder.id;
-            document.getElementById('editReminderWhen').value = formatDateTimeForInput(localDate);
-            document.getElementById('editReminderNote').value = reminder.note;
+            const editTimeless = document.getElementById('editReminderTimeless');
+            const isTimelessReminder = !!reminder.is_timeless || !reminder.when;
+            if (editTimeless) editTimeless.checked = isTimelessReminder;
+            if (isTimelessReminder) {
+                document.getElementById('editReminderWhen').value = '';
+                setReminderWhenEnabled(false, false);
+            } else {
+                document.getElementById('editReminderWhen').value = formatDateTimeForInput(localDate);
+                setReminderWhenEnabled(false, true);
+            }
+            if (reminderEditEditor) reminderEditEditor.setData(reminder.note || '');
+            else document.getElementById('editReminderNote').value = reminder.note || '';
             
             // Show the modal
             const modal = new bootstrap.Modal(document.getElementById('editReminderModal'));
@@ -4323,18 +4536,22 @@ async function updateReminder(event) {
     if (event) event.preventDefault();
     const reminderId = document.getElementById('editReminderId').value;
     const when = document.getElementById('editReminderWhen').value;
-    const note = document.getElementById('editReminderNote').value;
+    const note = reminderEditEditor ? reminderEditEditor.getData() : document.getElementById('editReminderNote').value;
+    const isTimeless = !!document.getElementById('editReminderTimeless')?.checked;
 
-    if (!when || !note) {
-        showToast('warning', 'Validation Error', 'Please fill in all required fields');
+    if ((!isTimeless && !when) || !note.trim()) {
+        showToast('warning', 'Validation Error', 'Please provide note and optional time settings correctly');
         return;
     }
 
     try {
         const apiKey = localStorage.getItem('apiKey');
         // Convert local datetime to UTC ISO string for backend
-        const localDateTime = new Date(when);
-        const utcDateTime = localDateTime.toISOString();
+        let utcDateTime = null;
+        if (!isTimeless && when) {
+            const localDateTime = new Date(when);
+            utcDateTime = localDateTime.toISOString();
+        }
         const response = await fetch(`/reminders/${reminderId}`, {
             method: 'PUT',
             headers: {
@@ -4342,8 +4559,9 @@ async function updateReminder(event) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                when: utcDateTime, // Send UTC time to backend
-                note: note
+                when: utcDateTime,
+                note: note,
+                is_timeless: isTimeless
             })
         });
         if (response.ok) {
@@ -4442,6 +4660,26 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Add event listener for reminder modal
+document.addEventListener('DOMContentLoaded', function() {
+    initializeReminderEditors();
+
+    const reminderTimeless = document.getElementById('reminderTimeless');
+    const editReminderTimeless = document.getElementById('editReminderTimeless');
+
+    if (reminderTimeless) {
+        setReminderWhenEnabled(true, !reminderTimeless.checked);
+        reminderTimeless.addEventListener('change', function() {
+            setReminderWhenEnabled(true, !this.checked);
+        });
+    }
+
+    if (editReminderTimeless) {
+        editReminderTimeless.addEventListener('change', function() {
+            setReminderWhenEnabled(false, !this.checked);
+        });
+    }
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     const reminderModal = document.getElementById('newReminderModal');
     if (reminderModal) {
@@ -4925,13 +5163,13 @@ function setCurrentDoingActivityFromSchedule() {
             doingActivities.sort((a, b) => new Date(b.clock_in) - new Date(a.clock_in));
             currentActivity = doingActivities[0];
             updateCurrentActivityDisplay(true);
+            startClockInTimer();
             return;
         }
     }
     // If none found, clear currentActivity section
     currentActivity = null;
-    document.getElementById('currentActivityInfo').innerHTML = `<p class="mb-1">No active activity</p>`;
-    document.getElementById('startTime').textContent = '--:--';
+    setCurrentActivityEmptyState();
 }
 
 // Delete Task Function

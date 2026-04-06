@@ -22,24 +22,20 @@ def create_reminder(
     """Create a new reminder for the current user."""
     # Convert the reminder time from user's timezone to UTC for storage
     user_timezone = current_user.timezone
-    print(f"DEBUG: Creating reminder with when={reminder.when}, user_timezone={user_timezone}")
-    print(f"DEBUG: reminder.when.tzinfo={reminder.when.tzinfo}")
-    print(f"DEBUG: reminder.when type={type(reminder.when)}")
     
-    utc_when = convert_from_timezone(reminder.when, user_timezone)
-    print(f"DEBUG: Converted to UTC: {utc_when}")
-    print(f"DEBUG: utc_when.tzinfo={utc_when.tzinfo}")
+    utc_when = None
+    if reminder.when is not None:
+        utc_when = convert_from_timezone(reminder.when, user_timezone)
     
     db_reminder = Reminder(
         owner_id=current_user.id,
         when=utc_when,
-        note=reminder.note
+        note=reminder.note,
+        is_timeless=1 if reminder.is_timeless or reminder.when is None else 0
     )
     db.add(db_reminder)
     db.commit()
     db.refresh(db_reminder)
-    print(f"DEBUG: Created reminder with ID {db_reminder.id}")
-    print(f"DEBUG: Stored reminder when={db_reminder.when}")
     return db_reminder
 
 @router.get("/", response_model=List[ReminderResponse])
@@ -58,7 +54,6 @@ def get_today_reminders(
 ):
     """Get reminders for today for the current user in their timezone."""
     user_timezone = current_user.timezone
-    print(f"DEBUG: Getting today's reminders for user_timezone={user_timezone}")
     
     # Get current date in user's timezone
     tz = pytz.timezone(user_timezone)
@@ -66,8 +61,6 @@ def get_today_reminders(
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     today_end = today_start.replace(hour=23, minute=59, second=59, microsecond=999999)
     
-    print(f"DEBUG: Today in {user_timezone}: {today_start} to {today_end}")
-    print(f"DEBUG: Current time in {user_timezone}: {now}")
     
     # Convert to UTC for database query
     utc_start = today_start.astimezone(pytz.UTC)
@@ -77,20 +70,11 @@ def get_today_reminders(
     naive_utc_start = utc_start.replace(tzinfo=None)
     naive_utc_end = utc_end.replace(tzinfo=None)
     
-    print(f"DEBUG: UTC range for query: {utc_start} to {utc_end}")
-    print(f"DEBUG: Naive UTC range for query: {naive_utc_start} to {naive_utc_end}")
     
     reminders = db.query(Reminder).filter(
         Reminder.owner_id == current_user.id,
-        Reminder.when >= naive_utc_start,
-        Reminder.when <= naive_utc_end
+        ((Reminder.is_timeless == 1) | ((Reminder.when >= naive_utc_start) & (Reminder.when <= naive_utc_end)))
     ).order_by(Reminder.when).all()
-    
-    print(f"DEBUG: Found {len(reminders)} reminders for today")
-    for reminder in reminders:
-        print(f"DEBUG: Reminder {reminder.id}: when={reminder.when}, note={reminder.note}")
-        print(f"DEBUG: Reminder {reminder.id}: when type={type(reminder.when)}")
-        print(f"DEBUG: Reminder {reminder.id}: when tzinfo={reminder.when.tzinfo}")
     
     return reminders
 
@@ -105,32 +89,24 @@ def get_reminders_by_date_range(
     """Get reminders for the current user within a date range (inclusive, in user's timezone)"""
     import pytz
     from datetime import datetime, timedelta
-    print(f"[REMINDERS] /date-range called with start_date={start_date}, end_date={end_date}, timezone={timezone}")
     user_timezone = timezone or current_user.timezone or "UTC"
-    print(f"[REMINDERS] Using timezone: {user_timezone}")
     tz = pytz.timezone(user_timezone)
     # Parse start and end dates in user's timezone
     try:
         start_dt = tz.localize(datetime.strptime(start_date, "%Y-%m-%d"))
         end_dt = tz.localize(datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)) - timedelta(microseconds=1)
-        print(f"[REMINDERS] Parsed start_dt: {start_dt}, end_dt: {end_dt}")
     except Exception as e:
-        print(f"[REMINDERS] Date parsing error: {e}")
         raise HTTPException(status_code=400, detail=f"Invalid date format: {e}")
     # Convert to UTC for DB query
     start_dt_utc = start_dt.astimezone(pytz.UTC)
     end_dt_utc = end_dt.astimezone(pytz.UTC)
-    print(f"[REMINDERS] UTC range: {start_dt_utc} to {end_dt_utc}")
     # Convert to naive datetimes for SQLite
     naive_utc_start = start_dt_utc.replace(tzinfo=None)
     naive_utc_end = end_dt_utc.replace(tzinfo=None)
-    print(f"[REMINDERS] Naive UTC range: {naive_utc_start} to {naive_utc_end}")
     reminders = db.query(Reminder).filter(
         Reminder.owner_id == current_user.id,
-        Reminder.when >= naive_utc_start,
-        Reminder.when <= naive_utc_end
+        ((Reminder.is_timeless == 1) | ((Reminder.when >= naive_utc_start) & (Reminder.when <= naive_utc_end)))
     ).order_by(Reminder.when).all()
-    print(f"[REMINDERS] Found {len(reminders)} reminders in range.")
     return reminders
 
 @router.get("/{reminder_id}", response_model=ReminderResponse)
@@ -174,12 +150,19 @@ def update_reminder(
     
     # Update only provided fields
     if reminder_update.when is not None:
-        # Convert the reminder time from user's timezone to UTC for storage
         user_timezone = current_user.timezone
         utc_when = convert_from_timezone(reminder_update.when, user_timezone)
         db_reminder.when = utc_when
+        db_reminder.is_timeless = 0
+    elif reminder_update.when is None and reminder_update.note is not None and getattr(reminder_update, "is_timeless", None) is True:
+        db_reminder.when = None
+        db_reminder.is_timeless = 1
     if reminder_update.note is not None:
         db_reminder.note = reminder_update.note
+    if reminder_update.is_timeless is not None:
+        db_reminder.is_timeless = 1 if reminder_update.is_timeless else 0
+        if reminder_update.is_timeless:
+            db_reminder.when = None
     
     db.commit()
     db.refresh(db_reminder)

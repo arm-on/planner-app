@@ -28,7 +28,7 @@ from routers import reminders as reminders_router
 from routers import assistant as assistant_router
 from routers import agentic_assistant as agentic_router
 from routers.notes import router as notes_router
-from core.database import engine, Base, get_db
+from core.database import engine, Base, get_db, migrate_reminders_table_if_needed
 from models import user, projects, models, keys, tasks, progress, reminders, assistant_memory, assistant_events
 from sqlalchemy.orm import Session
 from datetime import datetime as dt
@@ -38,6 +38,7 @@ from core.templates import templates
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
+migrate_reminders_table_if_needed()
 
 # Create FastAPI instance
 app = FastAPI()

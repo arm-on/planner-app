@@ -3,8 +3,9 @@ from datetime import datetime
 from typing import Optional
 
 class ReminderBase(BaseModel):
-    when: datetime
+    when: Optional[datetime] = None
     note: str
+    is_timeless: bool = True
 
 class ReminderCreate(ReminderBase):
     pass
@@ -18,14 +19,12 @@ class ReminderResponse(ReminderBase):
     owner_id: int
     
     @field_serializer('when')
-    def serialize_when(self, when: datetime) -> str:
-        """Convert naive datetime to UTC ISO string for frontend"""
+    def serialize_when(self, when: Optional[datetime]) -> Optional[str]:
+        if when is None:
+            return None
         if when.tzinfo is None:
-            # Assume naive datetime is UTC and convert to UTC ISO string
             return when.isoformat() + 'Z'
-        else:
-            # Convert to UTC ISO string
-            return when.astimezone().isoformat()
+        return when.astimezone().isoformat()
     
     class Config:
         from_attributes = True

@@ -240,6 +240,73 @@ body {
   background: linear-gradient(180deg, #203a64 0%, #1b304f 100%) !important;
 }
 
+/* Dashboard sticky section navigation in dark mode */
+:root[data-theme="dark"] .dashboard-section-nav {
+  background: rgba(12, 20, 33, 0.9) !important;
+  border-bottom-color: rgba(103, 132, 171, 0.34) !important;
+  box-shadow: 0 10px 22px -20px rgba(0, 0, 0, 0.95) !important;
+}
+
+:root[data-theme="dark"] .dashboard-section-nav .section-nav-link {
+  background: rgba(23, 35, 55, 0.95) !important;
+  border-color: rgba(101, 129, 167, 0.5) !important;
+  color: #d5e5ff !important;
+}
+
+:root[data-theme="dark"] .dashboard-section-nav .section-nav-link:hover {
+  background: rgba(34, 49, 74, 0.98) !important;
+  border-color: rgba(135, 165, 209, 0.64) !important;
+  color: #eef5ff !important;
+}
+
+:root[data-theme="dark"] .dashboard-section-nav .section-nav-link.active {
+  background: linear-gradient(145deg, rgba(36, 70, 131, 0.95), rgba(26, 52, 98, 0.95)) !important;
+  border-color: rgba(129, 170, 235, 0.8) !important;
+  color: #f3f8ff !important;
+  box-shadow: 0 16px 24px -22px rgba(111, 153, 223, 0.95) !important;
+}
+
+:root[data-theme="dark"] .back-to-top-btn {
+  background: rgba(24, 36, 56, 0.95) !important;
+  border-color: rgba(110, 143, 188, 0.52) !important;
+  color: #dbe9ff !important;
+}
+
+:root[data-theme="dark"] .back-to-top-btn:hover {
+  background: rgba(35, 51, 77, 0.98) !important;
+  color: #f0f6ff !important;
+}
+
+:root[data-theme="dark"] .current-activity-heading {
+  color: #e8f1ff !important;
+}
+
+:root[data-theme="dark"] .current-activity-subheading,
+:root[data-theme="dark"] .current-activity-meta,
+:root[data-theme="dark"] .current-started-at,
+:root[data-theme="dark"] .current-time-label {
+  color: #a9bddf !important;
+}
+
+:root[data-theme="dark"] .current-activity-info,
+:root[data-theme="dark"] .current-activity-side {
+  background: rgba(18, 30, 47, 0.92) !important;
+  border-color: rgba(108, 137, 176, 0.4) !important;
+}
+
+:root[data-theme="dark"] .current-empty-state {
+  color: #d7e7ff !important;
+}
+
+:root[data-theme="dark"] .current-empty-state i {
+  background: rgba(35, 61, 105, 0.7) !important;
+  color: #bdd6ff !important;
+}
+
+:root[data-theme="dark"] .current-activity-title {
+  color: #edf4ff !important;
+}
+
 /* Assistant/report/dashboard fine tuning for readable dark contrast */
 :root[data-theme="dark"] .response-content,
 :root[data-theme="dark"] .response-content p,
@@ -489,4 +556,10 @@ body {
 
 :root[data-theme="dark"] .app-footer {
   color: #a7bbda !important;
+}
+
+.reminder-note-render [dir="auto"],
+.ck.ck-content [dir="auto"] {
+  unicode-bidi: plaintext;
+  text-align: start;
 }
